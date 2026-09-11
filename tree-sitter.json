@@ -1,0 +1,40 @@
+{
+  "grammars": [
+    {
+      "name": "snowflake",
+      "camelcase": "Snowflake",
+      "scope": "source.snowflake",
+      "path": ".",
+      "file-types": [
+        "sql"
+      ],
+      "highlights": [
+        "queries/highlights.scm"
+      ],
+      "injections": [
+        "queries/injections.scm"
+      ]
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Tree-sitter grammar for Snowflake SQL",
+    "authors": [
+      {
+        "name": "M. Reifschneider"
+      }
+    ],
+    "links": {
+      "repository": "git+https://github.com/meloncholic/tree-sitter-snowflake.git"
+    }
+  },
+  "bindings": {
+    "c": true,
+    "go": false,
+    "node": true,
+    "python": false,
+    "rust": true,
+    "swift": false
+  }
+}

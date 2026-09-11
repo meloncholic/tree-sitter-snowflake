@@ -1,0 +1,710 @@
+================================================================================
+create or replace procedure with scripting
+================================================================================
+
+CREATE OR REPLACE PROCEDURE dw.load(p_target VARCHAR)
+RETURNS STRING
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS $$
+DECLARE
+  n INT := 0;
+  c1 CURSOR FOR SELECT id FROM src;
+BEGIN
+  SELECT COUNT(*) INTO :n FROM src;
+  OPEN c1;
+  FETCH c1 INTO :n;
+  CLOSE c1;
+  IF n > 0 THEN
+    MERGE INTO tgt t USING src s ON t.id = s.id
+    WHEN MATCHED AND s.upd = TRUE THEN UPDATE SET t.v = s.v
+    WHEN NOT MATCHED THEN INSERT (id, v) VALUES (s.id, s.v);
+  ELSEIF n = 0 THEN
+    RETURN 'empty';
+  ELSE
+    RAISE;
+  END IF;
+EXCEPTION
+  WHEN OTHER THEN RAISE;
+END;
+$$;
+
+---
+
+(program
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        (identifier)
+        (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar))))
+      (keyword_returns)
+      (keyword_string)
+      (sql_language
+        (keyword_language)
+        (keyword_sql))
+      (module_option
+        (execute_as_clause
+          (keyword_execute_as)
+          (keyword_as)
+          (keyword_caller)))
+      (keyword_as)
+      (function_body
+        (dollar_quoted_script
+          (declare_statement
+            (keyword_declare)
+            (variable_declaration
+              (identifier)
+              (keyword_int)
+              (literal))
+            (cursor_declaration
+              (identifier)
+              (keyword_cursor)
+              (keyword_for)
+              (select
+                (keyword_select)
+                (select_expression
+                  (term
+                    (field
+                      (identifier)))))
+              (from
+                (keyword_from)
+                (relation
+                  (object_reference
+                    (identifier))))))
+          (statement
+            (block
+              (keyword_begin)
+              (statement
+                (select
+                  (keyword_select)
+                  (select_expression
+                    (term
+                      (invocation
+                        (object_reference
+                          (identifier))
+                        (all_fields))))
+                  (select_into
+                    (keyword_into)
+                    (bind_variable
+                      (identifier))))
+                (from
+                  (keyword_from)
+                  (relation
+                    (object_reference
+                      (identifier)))))
+              (statement
+                (open_cursor_statement
+                  (keyword_open)
+                  (identifier)))
+              (statement
+                (fetch_cursor_statement
+                  (keyword_fetch)
+                  (identifier)
+                  (keyword_into)
+                  (bind_variable
+                    (identifier))))
+              (statement
+                (close_cursor_statement
+                  (keyword_close)
+                  (identifier)))
+              (statement
+                (if_statement
+                  (keyword_if)
+                  (binary_expression
+                    (field
+                      (identifier))
+                    (literal))
+                  (keyword_then)
+                  (statement
+                    (merge_statement
+                      (keyword_merge)
+                      (keyword_into)
+                      (relation
+                        (object_reference
+                          (identifier))
+                        (identifier))
+                      (keyword_using)
+                      (relation
+                        (object_reference
+                          (identifier))
+                        (identifier))
+                      (keyword_on)
+                      (semi_structured
+                        (binary_expression
+                          (field
+                            (object_reference
+                              (identifier))
+                            (identifier))
+                          (field
+                            (identifier)))
+                        (identifier))
+                      (merge_action
+                        (keyword_when)
+                        (keyword_matched)
+                        (keyword_and)
+                        (binary_expression
+                          (field
+                            (object_reference
+                              (identifier))
+                            (identifier))
+                          (literal
+                            (keyword_true)))
+                        (keyword_then)
+                        (keyword_update)
+                        (keyword_set)
+                        (assignment
+                          (field
+                            (object_reference
+                              (identifier))
+                            (identifier))
+                          (field
+                            (object_reference
+                              (identifier))
+                            (identifier))))
+                      (merge_action
+                        (keyword_when)
+                        (keyword_not)
+                        (keyword_matched)
+                        (keyword_then)
+                        (keyword_insert)
+                        (identifier)
+                        (identifier)
+                        (keyword_values)
+                        (list
+                          (field
+                            (object_reference
+                              (identifier))
+                            (identifier))
+                          (field
+                            (object_reference
+                              (identifier))
+                            (identifier))))))
+                  (elseif_clause
+                    (keyword_elseif)
+                    (binary_expression
+                      (field
+                        (identifier))
+                      (literal))
+                    (keyword_then)
+                    (statement
+                      (return_statement
+                        (keyword_return)
+                        (literal
+                          (literal)))))
+                  (else_clause
+                    (keyword_else)
+                    (statement
+                      (raise_statement
+                        (keyword_raise))))
+                  (keyword_end)
+                  (keyword_if)))
+              (exception_section
+                (keyword_exception)
+                (exception_handler
+                  (keyword_when)
+                  (keyword_other)
+                  (keyword_then)
+                  (statement
+                    (raise_statement
+                      (keyword_raise)))))
+              (keyword_end))))))))
+
+================================================================================
+javascript procedure with single-quoted body
+================================================================================
+
+CREATE OR REPLACE PROCEDURE process_rows()
+RETURNS VARIANT
+LANGUAGE JAVASCRIPT
+AS '
+var rows = [];
+var stmt = snowflake.execute({sqlText: ''SELECT 1''});
+while (stmt.next()) {
+  rows.push(stmt.getColumnValue(1));
+}
+return rows;
+';
+
+---
+
+(program
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        (identifier))
+      (function_arguments)
+      (keyword_returns)
+      (keyword_variant)
+      (foreign_language
+        (keyword_language)
+        (keyword_javascript))
+      (keyword_as)
+      (function_body
+        (string_body
+          (body_content)
+          (doubled_quote)
+          (body_content)
+          (doubled_quote)
+          (body_content))))))
+
+================================================================================
+javascript function with dollar-quoted body
+================================================================================
+
+CREATE OR REPLACE FUNCTION mask_email(email VARCHAR)
+RETURNS VARCHAR
+LANGUAGE JAVASCRIPT
+AS $$
+function mask(email) {
+  return email.replace(/(.).+(@.+)/, '$1***$2');
+}
+$$;
+
+---
+
+(program
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar))))
+      (keyword_returns)
+      (varchar
+        (keyword_varchar))
+      (foreign_language
+        (keyword_language)
+        (keyword_javascript))
+      (keyword_as)
+      (function_body
+        (dollar_quoted_body
+          (body_content))))))
+
+================================================================================
+scalar sql udf
+================================================================================
+
+CREATE OR REPLACE FUNCTION area(r FLOAT)
+RETURNS FLOAT
+AS $$ 3.14159 * r * r $$;
+
+---
+
+(program
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (keyword_float)))
+      (keyword_returns)
+      (keyword_float)
+      (keyword_as)
+      (function_body
+        (dollar_quoted_expression
+          (binary_expression
+            (binary_expression
+              (literal)
+              (field
+                (identifier)))
+            (field
+              (identifier))))))))
+
+================================================================================
+execute immediate with using
+================================================================================
+
+EXECUTE IMMEDIATE
+$$
+BEGIN
+  LET cmd VARCHAR := 'SELECT 1';
+  EXECUTE IMMEDIATE :cmd;
+  RETURN cmd;
+END;
+$$;
+
+---
+
+(program
+  (statement
+    (execute_immediate_statement
+      (keyword_execute)
+      (keyword_immediate)
+      (dollar_quoted_script
+        (statement
+          (block
+            (keyword_begin)
+            (statement
+              (let_statement
+                (keyword_let)
+                (identifier)
+                (varchar
+                  (keyword_varchar))
+                (literal
+                  (literal))))
+            (statement
+              (execute_immediate_statement
+                (keyword_execute)
+                (keyword_immediate)
+                (bind_variable
+                  (identifier))))
+            (statement
+              (return_statement
+                (keyword_return)
+                (field
+                  (identifier))))
+            (keyword_end)))))))
+
+================================================================================
+scripting while and for loops
+================================================================================
+
+CREATE OR REPLACE PROCEDURE loops()
+RETURNS VARCHAR
+LANGUAGE SQL
+AS $$
+DECLARE
+  i INT;
+BEGIN
+  i := 0;
+  WHILE i < 10 DO
+    i := i + 1;
+    IF i = 3 THEN
+      CONTINUE;
+    END IF;
+  END WHILE;
+  FOR j IN 1 TO 5 DO
+    IF j = 4 THEN
+      BREAK;
+    END IF;
+  END FOR;
+  FOR rec IN (SELECT id FROM t) DO
+    i := rec.id;
+  END FOR;
+  RETURN i;
+END;
+$$;
+
+---
+
+(program
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        (identifier))
+      (function_arguments)
+      (keyword_returns)
+      (varchar
+        (keyword_varchar))
+      (sql_language
+        (keyword_language)
+        (keyword_sql))
+      (keyword_as)
+      (function_body
+        (dollar_quoted_script
+          (declare_statement
+            (keyword_declare)
+            (variable_declaration
+              (identifier)
+              (keyword_int)))
+          (statement
+            (block
+              (keyword_begin)
+              (statement
+                (assignment_statement
+                  (identifier)
+                  (literal)))
+              (statement
+                (while_statement
+                  (keyword_while)
+                  (binary_expression
+                    (field
+                      (identifier))
+                    (literal))
+                  (keyword_do)
+                  (statement
+                    (assignment_statement
+                      (identifier)
+                      (binary_expression
+                        (field
+                          (identifier))
+                        (literal))))
+                  (statement
+                    (if_statement
+                      (keyword_if)
+                      (binary_expression
+                        (field
+                          (identifier))
+                        (literal))
+                      (keyword_then)
+                      (statement
+                        (continue_statement
+                          (keyword_continue)))
+                      (keyword_end)
+                      (keyword_if)))
+                  (keyword_end)
+                  (keyword_while)))
+              (statement
+                (for_statement
+                  (keyword_for)
+                  (identifier)
+                  (keyword_in)
+                  (literal)
+                  (keyword_to)
+                  (literal)
+                  (keyword_do)
+                  (statement
+                    (if_statement
+                      (keyword_if)
+                      (binary_expression
+                        (field
+                          (identifier))
+                        (literal))
+                      (keyword_then)
+                      (statement
+                        (break_statement
+                          (keyword_break)))
+                      (keyword_end)
+                      (keyword_if)))
+                  (keyword_end)
+                  (keyword_for)))
+              (statement
+                (for_statement
+                  (keyword_for)
+                  (identifier)
+                  (keyword_in)
+                  (subquery
+                    (select
+                      (keyword_select)
+                      (select_expression
+                        (term
+                          (field
+                            (identifier)))))
+                    (from
+                      (keyword_from)
+                      (relation
+                        (object_reference
+                          (identifier)))))
+                  (keyword_do)
+                  (statement
+                    (assignment_statement
+                      (identifier)
+                      (field
+                        (object_reference
+                          (identifier))
+                        (identifier))))
+                  (keyword_end)
+                  (keyword_for)))
+              (statement
+                (return_statement
+                  (keyword_return)
+                  (field
+                    (identifier))))
+              (keyword_end))))))))
+
+================================================================================
+resultset and raise
+================================================================================
+
+CREATE OR REPLACE PROCEDURE res()
+RETURNS VARCHAR
+LANGUAGE SQL
+AS $$
+DECLARE
+  res RESULTSET := (SELECT 1);
+BEGIN
+  FOR row IN res DO
+    RETURN row;
+  END FOR;
+  RAISE my_exception;
+EXCEPTION
+  WHEN my_exception THEN
+    RETURN 'failed';
+END;
+$$;
+
+---
+
+(program
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        (identifier))
+      (function_arguments)
+      (keyword_returns)
+      (varchar
+        (keyword_varchar))
+      (sql_language
+        (keyword_language)
+        (keyword_sql))
+      (keyword_as)
+      (function_body
+        (dollar_quoted_script
+          (declare_statement
+            (keyword_declare)
+            (resultset_declaration
+              (identifier)
+              (keyword_resultset)
+              (subquery
+                (select
+                  (keyword_select)
+                  (select_expression
+                    (term
+                      (literal)))))))
+          (statement
+            (block
+              (keyword_begin)
+              (statement
+                (for_statement
+                  (keyword_for)
+                  (identifier)
+                  (keyword_in)
+                  (identifier)
+                  (keyword_do)
+                  (statement
+                    (return_statement
+                      (keyword_return)
+                      (field
+                        (identifier))))
+                  (keyword_end)
+                  (keyword_for)))
+              (statement
+                (raise_statement
+                  (keyword_raise)
+                  (identifier)))
+              (exception_section
+                (keyword_exception)
+                (exception_handler
+                  (keyword_when)
+                  (identifier)
+                  (keyword_then)
+                  (statement
+                    (return_statement
+                      (keyword_return)
+                      (literal
+                        (literal))))))
+              (keyword_end))))))))
+
+================================================================================
+execute immediate on concatenated text and resultset default
+================================================================================
+
+EXECUTE IMMEDIATE 'INSERT INTO t VALUES (' || :v || ')';
+
+CREATE OR REPLACE PROCEDURE p()
+RETURNS VARCHAR
+LANGUAGE SQL
+AS $$
+DECLARE
+    R1 RESULTSET DEFAULT (SELECT C1 FROM DB1.S2.T1);
+BEGIN
+    FOR REC IN R1 DO
+        RETURN REC.C1;
+    END FOR;
+END;
+$$;
+
+---
+
+(program
+  (statement
+    (execute_immediate_statement
+      (keyword_execute)
+      (keyword_immediate)
+      (sql_text_expression
+        (literal)
+        (bind_variable
+          (identifier))
+        (literal))))
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        (identifier))
+      (function_arguments)
+      (keyword_returns)
+      (varchar
+        (keyword_varchar))
+      (sql_language
+        (keyword_language)
+        (keyword_sql))
+      (keyword_as)
+      (function_body
+        (dollar_quoted_script
+          (declare_statement
+            (keyword_declare)
+            (resultset_declaration
+              (identifier)
+              (keyword_resultset)
+              (keyword_default)
+              (subquery
+                (select
+                  (keyword_select)
+                  (select_expression
+                    (term
+                      (field
+                        (identifier)))))
+                (from
+                  (keyword_from)
+                  (relation
+                    (object_reference
+                      (identifier)
+                      (identifier)
+                      (identifier)))))))
+          (statement
+            (block
+              (keyword_begin)
+              (statement
+                (for_statement
+                  (keyword_for)
+                  (identifier)
+                  (keyword_in)
+                  (identifier)
+                  (keyword_do)
+                  (statement
+                    (return_statement
+                      (keyword_return)
+                      (field
+                        (object_reference
+                          (identifier))
+                        (identifier))))
+                  (keyword_end)
+                  (keyword_for)))
+              (keyword_end))))))))

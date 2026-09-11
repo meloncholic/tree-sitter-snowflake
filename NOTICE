@@ -1,0 +1,20 @@
+tree-sitter-snowflake adapts material from two MIT-licensed projects.
+
+The external scanner for dollar-quoted strings (src/scanner.c) derives from
+DerekStride/tree-sitter-sql's scanner (https://github.com/DerekStride/tree-sitter-sql),
+copyright (c) 2021 Derek Stride, licensed under the MIT License. The
+adaptation is substantial: Snowflake supports only the bare `$$` delimiter —
+not PostgreSQL's `$tag$` form — so the tag-carrying state machine was
+removed and the token set reduced to the three the Snowflake body shape
+needs.
+
+The repository scaffold (module layout under grammar/, the option-list and
+keyword-extraction conventions, the Rust and Node bindings, and the CI
+shape) follows tree-sitter-mssql
+(https://github.com/meloncholic/tree-sitter-mssql), itself a fork of
+DerekStride/tree-sitter-sql; its grammar modules were used as style
+reference for rule organization, and node naming for constructs common to
+both dialects echoes the general-SQL naming so existing consumer profiles
+transfer with minimal change.
+
+See LICENSE for the full MIT license text.

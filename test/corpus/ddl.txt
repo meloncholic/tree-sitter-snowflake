@@ -1,0 +1,1039 @@
+================================================================================
+create table with options
+================================================================================
+
+CREATE OR REPLACE TRANSIENT TABLE dw.events (
+  id NUMBER(38,0) NOT NULL AUTOINCREMENT START 1 INCREMENT 1 NOORDER,
+  payload VARIANT,
+  created TIMESTAMP_NTZ(9) DEFAULT CURRENT_TIMESTAMP(),
+  dept_key NUMBER(38,0),
+  CONSTRAINT pk_events PRIMARY KEY (id),
+  CONSTRAINT fk_dept FOREIGN KEY (dept_key) REFERENCES dw.dept (id)
+)
+CLUSTER BY (to_date(created))
+DATA_RETENTION_TIME_IN_DAYS = 1
+COMMENT = 'events';
+
+---
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_transient)
+      (keyword_table)
+      (object_reference
+        (identifier)
+        (identifier))
+      (column_definitions
+        (column_definition
+          (identifier)
+          (number
+            (keyword_number)
+            (literal)
+            (literal))
+          (keyword_not)
+          (keyword_null)
+          (keyword_autoincrement)
+          (keyword_start)
+          (literal)
+          (keyword_increment)
+          (literal)
+          (identifier))
+        (column_definition
+          (identifier)
+          (keyword_variant))
+        (column_definition
+          (identifier)
+          (timestamp
+            (keyword_timestamp)
+            (literal))
+          (keyword_default)
+          (invocation
+            (object_reference
+              (identifier))))
+        (column_definition
+          (identifier)
+          (number
+            (keyword_number)
+            (literal)
+            (literal)))
+        (table_constraint
+          (keyword_constraint)
+          (identifier)
+          (keyword_primary)
+          (keyword_key)
+          (identifier))
+        (table_constraint
+          (keyword_constraint)
+          (identifier)
+          (keyword_foreign)
+          (keyword_key)
+          (identifier)
+          (referential_clause
+            (keyword_references)
+            (object_reference
+              (identifier)
+              (identifier))
+            (identifier))))
+      (table_option
+        (cluster_by
+          (keyword_cluster)
+          (keyword_by)
+          (invocation
+            (object_reference
+              (identifier))
+            (field
+              (identifier)))))
+      (table_option
+        (option
+          (identifier)
+          (literal)))
+      (table_option
+        (option
+          (identifier)
+          (literal
+            (literal)))))))
+
+================================================================================
+ctas with column list
+================================================================================
+
+CREATE TABLE IF NOT EXISTS dw.summary (a, b) AS SELECT 1, 2;
+
+---
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        (identifier)
+        (identifier))
+      (column_definitions
+        (column_definition
+          (identifier))
+        (column_definition
+          (identifier)))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              (literal))
+            (term
+              (literal))))))))
+
+================================================================================
+create view with column comments
+================================================================================
+
+CREATE OR REPLACE SECURE VIEW dw.v (
+  id COMMENT 'the id',
+  name
+)
+COPY GRANTS
+COMMENT = 'a view'
+AS SELECT id, name FROM t;
+
+---
+
+(program
+  (statement
+    (create_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_secure)
+      (keyword_view)
+      (object_reference
+        (identifier)
+        (identifier))
+      (view_column
+        (identifier)
+        (keyword_comment)
+        (literal))
+      (view_column
+        (identifier))
+      (view_option
+        (keyword_copy)
+        (keyword_grants))
+      (view_option
+        (option
+          (identifier)
+          (literal
+            (literal))))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              (field
+                (identifier)))
+            (term
+              (field
+                (identifier)))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              (identifier))))))))
+
+================================================================================
+materialized and dynamic tables
+================================================================================
+
+CREATE MATERIALIZED VIEW dw.mv AS SELECT 1;
+CREATE OR REPLACE DYNAMIC TABLE dw.dt
+  TARGET_LAG = '5 minutes'
+  WAREHOUSE = 'wh'
+AS SELECT * FROM src;
+
+---
+
+(program
+  (statement
+    (create_materialized_view
+      (keyword_create)
+      (keyword_materialized)
+      (keyword_view)
+      (object_reference
+        (identifier)
+        (identifier))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              (literal)))))))
+  (statement
+    (create_dynamic_table
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_dynamic)
+      (keyword_table)
+      (object_reference
+        (identifier)
+        (identifier))
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              (all_fields))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              (identifier))))))))
+
+================================================================================
+create task with schedule and when
+================================================================================
+
+CREATE OR REPLACE TASK dw.t
+  WAREHOUSE = dw.wh
+  SCHEDULE = 'USING CRON 15 6 * * 1-5 America/New_York'
+  USER_TASK_TIMEOUT_MS = 300000
+  WHEN SYSTEM$STREAM_HAS_DATA('s')
+AS
+INSERT INTO t SELECT 1;
+
+---
+
+(program
+  (statement
+    (create_task
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_task)
+      (object_reference
+        (identifier)
+        (identifier))
+      (task_option
+        (keyword_warehouse)
+        (object_reference
+          (identifier)
+          (identifier)))
+      (task_option
+        (keyword_schedule)
+        (literal))
+      (task_option
+        (option
+          (identifier)
+          (literal)))
+      (task_option
+        (keyword_when)
+        (invocation
+          (object_reference
+            (identifier))
+          (literal
+            (literal))))
+      (keyword_as)
+      (statement
+        (insert_statement
+          (keyword_insert)
+          (keyword_into)
+          (object_reference
+            (identifier))
+          (statement
+            (select
+              (keyword_select)
+              (select_expression
+                (term
+                  (literal))))))))))
+
+================================================================================
+create stage and file format
+================================================================================
+
+CREATE OR REPLACE STAGE dw.data
+  URL = 's3://bucket/path'
+  STORAGE_INTEGRATION = s3_int
+  FILE_FORMAT = (TYPE = CSV FIELD_DELIMITER = ',' SKIP_HEADER = 1);
+
+CREATE OR REPLACE FILE FORMAT dw.csv TYPE = CSV
+  FIELD_OPTIONALLY_ENCLOSED_BY = '"';
+
+---
+
+(program
+  (statement
+    (create_stage
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_stage)
+      (object_reference
+        (identifier)
+        (identifier))
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (option
+        (identifier)
+        (object_reference
+          (identifier)))
+      (option
+        (identifier)
+        (option
+          (identifier)
+          (object_reference
+            (identifier)))
+        (option
+          (identifier)
+          (literal
+            (literal)))
+        (option
+          (identifier)
+          (literal)))))
+  (statement
+    (create_file_format
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_file)
+      (keyword_format)
+      (object_reference
+        (identifier)
+        (identifier))
+      (option
+        (identifier)
+        (object_reference
+          (identifier)))
+      (option
+        (identifier)
+        (literal
+          (literal))))))
+
+================================================================================
+create warehouse database schema
+================================================================================
+
+CREATE WAREHOUSE IF NOT EXISTS wh WITH
+  WAREHOUSE_SIZE = 'XSMALL'
+  AUTO_SUSPEND = 60
+  AUTO_RESUME = TRUE;
+
+CREATE OR REPLACE TRANSIENT DATABASE db;
+CREATE SCHEMA IF NOT EXISTS db.sch;
+
+---
+
+(program
+  (statement
+    (create_warehouse
+      (keyword_create)
+      (keyword_warehouse)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        (identifier))
+      (keyword_with)
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (option
+        (identifier)
+        (literal))
+      (option
+        (identifier)
+        (literal
+          (keyword_true)))))
+  (statement
+    (create_database
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_transient)
+      (keyword_database)
+      (object_reference
+        (identifier))))
+  (statement
+    (create_schema
+      (keyword_create)
+      (keyword_schema)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        (identifier)
+        (identifier)))))
+
+================================================================================
+create stream pipe sequence tag role user integration
+================================================================================
+
+CREATE STREAM s ON TABLE t APPEND_ONLY = TRUE;
+CREATE PIPE p AUTO_INGEST = TRUE AS COPY INTO t FROM @stage;
+CREATE SEQUENCE seq START = 1 INCREMENT = 1;
+CREATE TAG cost_center ALLOWED_VALUES 'a', 'b';
+CREATE ROLE IF NOT EXISTS loader;
+CREATE USER etl PASSWORD = 'x' DEFAULT_ROLE = loader;
+CREATE STORAGE INTEGRATION s3_int TYPE = EXTERNAL_S3;
+
+---
+
+(program
+  (statement
+    (create_stream
+      (keyword_create)
+      (keyword_stream)
+      (object_reference
+        (identifier))
+      (keyword_on)
+      (keyword_table)
+      (object_reference
+        (identifier))
+      (option
+        (identifier)
+        (literal
+          (keyword_true)))))
+  (statement
+    (create_pipe
+      (keyword_create)
+      (keyword_pipe)
+      (object_reference
+        (identifier))
+      (option
+        (identifier)
+        (literal
+          (keyword_true)))
+      (keyword_as)
+      (copy_into_statement
+        (keyword_copy)
+        (keyword_into)
+        (object_reference
+          (identifier))
+        (keyword_from)
+        (stage_reference))))
+  (statement
+    (create_sequence
+      (keyword_create)
+      (keyword_sequence)
+      (object_reference
+        (identifier))
+      (option
+        (identifier)
+        (literal))
+      (option
+        (identifier)
+        (literal))))
+  (statement
+    (create_tag
+      (keyword_create)
+      (keyword_tag)
+      (object_reference
+        (identifier))
+      (identifier)
+      (literal)
+      (literal)))
+  (statement
+    (create_role
+      (keyword_create)
+      (keyword_role)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (identifier)))
+  (statement
+    (create_user
+      (keyword_create)
+      (keyword_user)
+      (identifier)
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (option
+        (identifier)
+        (object_reference
+          (identifier)))))
+  (statement
+    (create_integration
+      (keyword_create)
+      (keyword_storage)
+      (keyword_integration)
+      (identifier)
+      (option
+        (identifier)
+        (object_reference
+          (identifier))))))
+
+================================================================================
+semantic view
+================================================================================
+
+CREATE OR REPLACE SEMANTIC VIEW dw.sales
+TABLES (
+  inv AS dw.fact
+    PRIMARY KEY (k)
+    WITH SYNONYMS ('sale')
+    COMMENT = 'facts'
+)
+RELATIONSHIPS (
+  r1 AS inv(k) REFERENCES cust(k)
+)
+FACTS (
+  inv.qty AS inv.QTY
+)
+DIMENSIONS (
+  inv.type AS inv.TYPE
+)
+METRICS (
+  total AS (SUM(inv.qty)) COMMENT = 'sum'
+)
+AI_VERIFIED_QUERIES (
+  q1 AS (QUESTION 'what?' SQL 'SELECT 1')
+)
+COMMENT = 'the model';
+
+---
+
+(program
+  (statement
+    (create_semantic_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_semantic)
+      (keyword_view)
+      (object_reference
+        (identifier)
+        (identifier))
+      (semantic_tables_section
+        (keyword_tables)
+        (semantic_table
+          (identifier)
+          (keyword_as)
+          (object_reference
+            (identifier)
+            (identifier))
+          (keyword_primary)
+          (keyword_key)
+          (identifier)
+          (semantic_attribute_option
+            (keyword_with)
+            (identifier)
+            (literal))
+          (semantic_attribute_option
+            (option
+              (identifier)
+              (literal
+                (literal))))))
+      (semantic_relationships_section
+        (keyword_relationships)
+        (semantic_relationship
+          (identifier)
+          (keyword_as)
+          (identifier)
+          (identifier)
+          (keyword_references)
+          (identifier)
+          (identifier)))
+      (semantic_facts_section
+        (keyword_facts)
+        (semantic_attribute
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (keyword_as)
+          (field
+            (object_reference
+              (identifier))
+            (identifier))))
+      (semantic_dimensions_section
+        (keyword_dimensions)
+        (semantic_attribute
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (keyword_as)
+          (field
+            (object_reference
+              (identifier))
+            (identifier))))
+      (semantic_metrics_section
+        (keyword_metrics)
+        (semantic_metric
+          (identifier)
+          (keyword_as)
+          (parenthesized_expression
+            (invocation
+              (object_reference
+                (identifier))
+              (field
+                (object_reference
+                  (identifier))
+                (identifier))))
+          (semantic_attribute_option
+            (option
+              (identifier)
+              (literal
+                (literal))))))
+      (semantic_queries_section
+        (keyword_ai_verified_queries)
+        (semantic_query
+          (identifier)
+          (keyword_as)
+          (identifier)
+          (literal
+            (literal))
+          (identifier)
+          (literal
+            (literal))))
+      (semantic_view_option
+        (option
+          (identifier)
+          (literal
+            (literal)))))))
+
+================================================================================
+cortex search service and agent
+================================================================================
+
+CREATE OR REPLACE CORTEX SEARCH SERVICE dw.svc
+  ON text_col
+  WAREHOUSE = 'wh'
+  TARGET_LAG = '8 hours'
+AS (SELECT DISTINCT text_col FROM src);
+
+CREATE OR REPLACE AGENT dw.a
+  PROFILE = '{}'
+  FROM SPECIFICATION $$
+tools: []
+$$;
+
+---
+
+(program
+  (statement
+    (create_cortex_search
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_cortex)
+      (keyword_search)
+      (keyword_service)
+      (object_reference
+        (identifier)
+        (identifier))
+      (keyword_on)
+      (field
+        (identifier))
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (keyword_as)
+      (select
+        (keyword_select)
+        (keyword_distinct)
+        (select_expression
+          (term
+            (field
+              (identifier)))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            (identifier))))))
+  (statement
+    (create_agent
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_agent)
+      (object_reference
+        (identifier)
+        (identifier))
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (keyword_from)
+      (keyword_specification)
+      (literal))))
+
+================================================================================
+alter statements
+================================================================================
+
+ALTER TABLE t ADD COLUMN IF NOT EXISTS b BOOLEAN;
+ALTER TABLE t DROP COLUMN IF EXISTS old;
+ALTER TABLE t RENAME COLUMN a TO b;
+ALTER TABLE t SET DATA_RETENTION_TIME_IN_DAYS = 0;
+ALTER TABLE dw.t SWAP WITH dw.other;
+ALTER WAREHOUSE wh SUSPEND;
+ALTER TASK t RESUME;
+ALTER VIEW v RENAME TO v2;
+
+---
+
+(program
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        (identifier))
+      (add_column_action
+        (keyword_add)
+        (keyword_column)
+        (keyword_if)
+        (keyword_not)
+        (keyword_exists)
+        (column_definition
+          (identifier)
+          (keyword_boolean)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        (identifier))
+      (drop_column_action
+        (keyword_drop)
+        (keyword_column)
+        (keyword_if)
+        (keyword_exists)
+        (identifier))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        (identifier))
+      (rename_column_action
+        (keyword_rename)
+        (keyword_column)
+        (identifier)
+        (keyword_to)
+        (identifier))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        (identifier))
+      (keyword_set)
+      (option
+        (identifier)
+        (literal))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        (identifier)
+        (identifier))
+      (keyword_swap)
+      (keyword_with)
+      (object_reference
+        (identifier)
+        (identifier))))
+  (statement
+    (alter_warehouse
+      (keyword_alter)
+      (keyword_warehouse)
+      (object_reference
+        (identifier))
+      (keyword_suspend)))
+  (statement
+    (alter_task
+      (keyword_alter)
+      (keyword_task)
+      (object_reference
+        (identifier))
+      (keyword_resume)))
+  (statement
+    (alter_view
+      (keyword_alter)
+      (keyword_view)
+      (object_reference
+        (identifier))
+      (keyword_rename)
+      (keyword_to)
+      (object_reference
+        (identifier)))))
+
+================================================================================
+drop statements
+================================================================================
+
+DROP TABLE IF EXISTS t;
+DROP WAREHOUSE IF EXISTS wh CASCADE;
+
+---
+
+(program
+  (statement
+    (keyword_drop)
+    (object_kind
+      (keyword_table))
+    (keyword_if)
+    (keyword_exists)
+    (object_reference
+      (identifier)))
+  (statement
+    (keyword_drop)
+    (object_kind
+      (keyword_warehouse))
+    (keyword_if)
+    (keyword_exists)
+    (object_reference
+      (identifier))
+    (keyword_cascade)))
+
+================================================================================
+comment on
+================================================================================
+
+COMMENT ON TABLE dw.t IS 'a table';
+COMMENT ON COLUMN dw.t.id IS 'the id';
+
+---
+
+(program
+  (statement
+    (comment_on_statement
+      (keyword_comment)
+      (keyword_on)
+      (identifier)
+      (object_reference
+        (identifier)
+        (identifier))
+      (keyword_is)
+      (literal)))
+  (statement
+    (comment_on_statement
+      (keyword_comment)
+      (keyword_on)
+      (identifier)
+      (object_reference
+        (identifier)
+        (identifier)
+        (identifier))
+      (keyword_is)
+      (literal))))
+
+================================================================================
+qualified tag and dotted option value
+================================================================================
+
+CREATE TAG DB1.S2.TAG1 ALLOWED_VALUES 'a', 'b';
+
+CREATE OR REPLACE STAGE DB1.S1.STG2
+  URL = 's3://bucket/path'
+  FILE_FORMAT = DB1.S2.FF1;
+
+CREATE OR REPLACE STORAGE INTEGRATION INT2
+  TYPE=EXTERNAL_STAGE
+  STORAGE_ALLOWED_LOCATIONS=('s3://bucket/path');
+
+---
+
+(program
+  (statement
+    (create_tag
+      (keyword_create)
+      (keyword_tag)
+      (object_reference
+        (identifier)
+        (identifier)
+        (identifier))
+      (identifier)
+      (literal)
+      (literal)))
+  (statement
+    (create_stage
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_stage)
+      (object_reference
+        (identifier)
+        (identifier)
+        (identifier))
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (option
+        (identifier)
+        (object_reference
+          (identifier)
+          (identifier)
+          (identifier)))))
+  (statement
+    (create_integration
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_storage)
+      (keyword_integration)
+      (identifier)
+      (option
+        (identifier)
+        (object_reference
+          (identifier)))
+      (option
+        (identifier)
+        (literal
+          (literal))))))
+
+================================================================================
+semantic view alias-less generation
+================================================================================
+
+create or replace semantic view DB1.S2.SEMV2
+	tables (
+		DB1.S2.T2 primary key (C1) comment='x'
+	)
+	facts (
+		DB1.S2.T2.C2 as "Col_B"
+	)
+	metrics (
+		DB1.S2.T2.C3 as SUM("Col_B") - SUM(C1) with synonyms=('m') comment='x'
+	);
+
+---
+
+(program
+  (statement
+    (create_semantic_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_semantic)
+      (keyword_view)
+      (object_reference
+        (identifier)
+        (identifier)
+        (identifier))
+      (semantic_tables_section
+        (keyword_tables)
+        (semantic_table
+          (object_reference
+            (identifier)
+            (identifier)
+            (identifier))
+          (keyword_primary)
+          (keyword_key)
+          (identifier)
+          (semantic_attribute_option
+            (option
+              (identifier)
+              (literal
+                (literal))))))
+      (semantic_facts_section
+        (keyword_facts)
+        (semantic_attribute
+          (field
+            (object_reference
+              (identifier)
+              (identifier)
+              (identifier))
+            (identifier))
+          (keyword_as)
+          (field
+            (identifier))))
+      (semantic_metrics_section
+        (keyword_metrics)
+        (semantic_metric
+          (field
+            (object_reference
+              (identifier)
+              (identifier)
+              (identifier))
+            (identifier))
+          (keyword_as)
+          (binary_expression
+            (invocation
+              (object_reference
+                (identifier))
+              (field
+                (identifier)))
+            (invocation
+              (object_reference
+                (identifier))
+              (field
+                (identifier))))
+          (semantic_attribute_option
+            (keyword_with)
+            (identifier)
+            (literal))
+          (semantic_attribute_option
+            (option
+              (identifier)
+              (literal
+                (literal)))))))))

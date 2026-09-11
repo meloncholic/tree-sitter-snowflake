@@ -1,0 +1,98 @@
+================================================================================
+statement separation is mandatory
+================================================================================
+
+SELECT 1;
+SELECT 2
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (literal)))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (literal))))))
+
+================================================================================
+comments in all three spellings
+================================================================================
+
+-- line comment
+SELECT 1; // also a line comment
+/* block
+   comment */ SELECT 2;
+
+---
+
+(program
+  (comment)
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (literal)))))
+  (comment)
+  (marginalia)
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (literal))))))
+
+================================================================================
+dollar-quoted string as literal and nested script
+================================================================================
+
+SELECT $$a string with 'quotes' and a lone $ sign$$;
+EXECUTE IMMEDIATE $$
+BEGIN
+  SELECT $$an inner literal$$;
+END
+$$;
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (literal
+            (literal))))))
+  (statement
+    (execute_immediate_statement
+      (keyword_execute)
+      (keyword_immediate)
+      (dollar_quoted_script
+        (statement
+          (block
+            (keyword_begin)
+            (statement
+              (select
+                (keyword_select)
+                (select_expression
+                  (term
+                    (literal
+                      (literal))))))
+            (keyword_end)))))))
+
+================================================================================
+empty file
+================================================================================
+
+
+
+---
+
+(program)

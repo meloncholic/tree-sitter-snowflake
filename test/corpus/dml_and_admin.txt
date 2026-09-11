@@ -1,0 +1,730 @@
+================================================================================
+merge with all action kinds
+================================================================================
+
+MERGE INTO tgt t
+USING (SELECT * FROM src) s
+ON t.id = s.id
+WHEN MATCHED AND s.del = TRUE THEN DELETE
+WHEN MATCHED THEN UPDATE SET t.v = s.v, t.w = s.w
+WHEN NOT MATCHED AND s.new = TRUE THEN INSERT (id, v) VALUES (s.id, s.v);
+
+---
+
+(program
+  (statement
+    (merge_statement
+      (keyword_merge)
+      (keyword_into)
+      (relation
+        (object_reference
+          (identifier))
+        (identifier))
+      (keyword_using)
+      (relation
+        (subquery
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                (all_fields))))
+          (from
+            (keyword_from)
+            (relation
+              (object_reference
+                (identifier)))))
+        (identifier))
+      (keyword_on)
+      (semi_structured
+        (binary_expression
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (field
+            (identifier)))
+        (identifier))
+      (merge_action
+        (keyword_when)
+        (keyword_matched)
+        (keyword_and)
+        (binary_expression
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (literal
+            (keyword_true)))
+        (keyword_then)
+        (keyword_delete))
+      (merge_action
+        (keyword_when)
+        (keyword_matched)
+        (keyword_then)
+        (keyword_update)
+        (keyword_set)
+        (assignment
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (field
+            (object_reference
+              (identifier))
+            (identifier)))
+        (assignment
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (field
+            (object_reference
+              (identifier))
+            (identifier))))
+      (merge_action
+        (keyword_when)
+        (keyword_not)
+        (keyword_matched)
+        (keyword_and)
+        (binary_expression
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (literal
+            (keyword_true)))
+        (keyword_then)
+        (keyword_insert)
+        (identifier)
+        (identifier)
+        (keyword_values)
+        (list
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (field
+            (object_reference
+              (identifier))
+            (identifier)))))))
+
+================================================================================
+insert overwrite and plain insert
+================================================================================
+
+INSERT OVERWRITE INTO tgt SELECT * FROM src;
+INSERT INTO tgt (a, b) VALUES (1, 'x'), (2, 'y');
+
+---
+
+(program
+  (statement
+    (insert_statement
+      (keyword_insert)
+      (keyword_overwrite)
+      (keyword_into)
+      (object_reference
+        (identifier))
+      (statement
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              (all_fields))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              (identifier)))))))
+  (statement
+    (insert_statement
+      (keyword_insert)
+      (keyword_into)
+      (object_reference
+        (identifier))
+      (identifier)
+      (identifier)
+      (values
+        (keyword_values)
+        (list
+          (literal)
+          (literal
+            (literal)))
+        (list
+          (literal)
+          (literal
+            (literal)))))))
+
+================================================================================
+update with from
+================================================================================
+
+UPDATE tgt AS t
+SET v = s.v
+FROM src s
+WHERE t.id = s.id;
+
+---
+
+(program
+  (statement
+    (update_statement
+      (keyword_update)
+      (object_reference
+        (identifier))
+      (keyword_as)
+      (identifier)
+      (keyword_set)
+      (assignment
+        (field
+          (identifier))
+        (field
+          (object_reference
+            (identifier))
+          (identifier)))
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier))
+        (identifier))
+      (where
+        (keyword_where)
+        (binary_expression
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (field
+            (object_reference
+              (identifier))
+            (identifier)))))))
+
+================================================================================
+delete with using
+================================================================================
+
+DELETE FROM tgt
+USING other o
+WHERE tgt.id = o.id AND o.dead = TRUE;
+
+---
+
+(program
+  (statement
+    (delete_statement
+      (keyword_delete)
+      (keyword_from)
+      (object_reference
+        (identifier))
+      (keyword_using)
+      (relation
+        (object_reference
+          (identifier))
+        (identifier))
+      (where
+        (keyword_where)
+        (binary_expression
+          (semi_structured
+            (binary_expression
+              (semi_structured
+                (binary_expression
+                  (field
+                    (object_reference
+                      (identifier))
+                    (identifier))
+                  (field
+                    (identifier)))
+                (identifier))
+              (keyword_and)
+              (field
+                (identifier)))
+            (identifier))
+          (literal
+            (keyword_true)))))))
+
+================================================================================
+copy into both directions
+================================================================================
+
+COPY INTO dw.t
+FROM @dw.stage/path
+FILE_FORMAT = (TYPE = CSV)
+ON_ERROR = 'ABORT'
+PURGE = TRUE;
+
+COPY INTO @dw.stage/out
+FROM (SELECT * FROM dw.t)
+FILE_FORMAT = (TYPE = PARQUET);
+
+---
+
+(program
+  (statement
+    (copy_into_statement
+      (keyword_copy)
+      (keyword_into)
+      (object_reference
+        (identifier)
+        (identifier))
+      (keyword_from)
+      (stage_reference)
+      (option
+        (identifier)
+        (option
+          (identifier)
+          (object_reference
+            (identifier))))
+      (option
+        (identifier)
+        (literal
+          (literal)))
+      (option
+        (identifier)
+        (literal
+          (keyword_true)))))
+  (statement
+    (copy_into_statement
+      (keyword_copy)
+      (keyword_into)
+      (stage_reference)
+      (keyword_from)
+      (subquery
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              (all_fields))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              (identifier)
+              (identifier)))))
+      (option
+        (identifier)
+        (option
+          (identifier)
+          (object_reference
+            (identifier)))))))
+
+================================================================================
+put get list remove
+================================================================================
+
+PUT file://data.csv @stage/path AUTO_COMPRESS = TRUE;
+GET @stage/path file://out/;
+LIST @stage PATTERN = '.*\.csv';
+REMOVE @stage/old.csv;
+
+---
+
+(program
+  (statement
+    (put_statement
+      (keyword_put)
+      (literal)
+      (stage_reference)
+      (option
+        (identifier)
+        (literal
+          (keyword_true)))))
+  (statement
+    (get_statement
+      (keyword_get)
+      (stage_reference)
+      (literal)))
+  (statement
+    (list_statement
+      (keyword_list)
+      (stage_reference)
+      (option
+        (identifier)
+        (literal
+          (literal)))))
+  (statement
+    (remove_statement
+      (keyword_remove)
+      (stage_reference))))
+
+================================================================================
+grant and revoke
+================================================================================
+
+GRANT SELECT, INSERT ON TABLE dw.t TO ROLE loader;
+GRANT ALL PRIVILEGES ON FUTURE TABLES IN SCHEMA dw TO ROLE loader;
+GRANT OWNERSHIP ON TABLE dw.t TO ROLE owner;
+GRANT USAGE ON WAREHOUSE wh TO ROLE loader;
+GRANT ROLE loader TO USER etl;
+REVOKE GRANT OPTION FOR SELECT ON TABLE dw.t FROM ROLE loader CASCADE;
+
+---
+
+(program
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (grant_core
+        (privilege_list
+          (privilege
+            (keyword_select))
+          (privilege
+            (keyword_insert)))
+        (keyword_on)
+        (object_kind
+          (keyword_table))
+        (object_reference
+          (identifier)
+          (identifier))
+        (keyword_to)
+        (grantee
+          (keyword_role)
+          (identifier)))))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (grant_core
+        (keyword_all)
+        (keyword_privileges)
+        (keyword_on)
+        (keyword_future)
+        (object_kind
+          (identifier))
+        (keyword_in)
+        (keyword_schema)
+        (object_reference
+          (identifier))
+        (keyword_to)
+        (grantee
+          (keyword_role)
+          (identifier)))))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (grant_core
+        (keyword_ownership)
+        (keyword_on)
+        (object_kind
+          (keyword_table))
+        (object_reference
+          (identifier)
+          (identifier))
+        (keyword_to)
+        (grantee
+          (keyword_role)
+          (identifier)))))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (grant_core
+        (privilege_list
+          (privilege
+            (keyword_usage)))
+        (keyword_on)
+        (object_kind
+          (keyword_warehouse))
+        (object_reference
+          (identifier))
+        (keyword_to)
+        (grantee
+          (keyword_role)
+          (identifier)))))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (keyword_role)
+      (identifier)
+      (keyword_to)
+      (grantee
+        (keyword_user)
+        (identifier))))
+  (statement
+    (revoke_statement
+      (keyword_revoke)
+      (keyword_grant)
+      (keyword_option)
+      (keyword_for)
+      (grant_core
+        (privilege_list
+          (privilege
+            (keyword_select)))
+        (keyword_on)
+        (object_kind
+          (keyword_table))
+        (object_reference
+          (identifier)
+          (identifier))
+        (keyword_from)
+        (grantee
+          (keyword_role)
+          (identifier)))
+      (keyword_cascade))))
+
+================================================================================
+use set unset show describe call
+================================================================================
+
+USE DATABASE db;
+USE ROLE loader;
+USE WAREHOUSE wh;
+USE SECONDARY ROLES ALL;
+SET timezone = 'America/New_York';
+SET my_var = 'value';
+UNSET my_var;
+SHOW TABLES LIKE '%fact%' IN SCHEMA dw LIMIT 10;
+DESC TABLE dw.t;
+DESC PROCEDURE dw.p(VARCHAR);
+CALL dw.p(1);
+CALL dw.p(named => 2);
+
+---
+
+(program
+  (statement
+    (use_statement
+      (keyword_use)
+      (keyword_database)
+      (object_reference
+        (identifier))))
+  (statement
+    (use_statement
+      (keyword_use)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (use_statement
+      (keyword_use)
+      (keyword_warehouse)
+      (object_reference
+        (identifier))))
+  (statement
+    (use_statement
+      (keyword_use)
+      (keyword_secondary)
+      (keyword_roles)
+      (keyword_all)))
+  (statement
+    (set_statement
+      (keyword_set)
+      (set_assignment
+        (identifier)
+        (literal
+          (literal)))))
+  (statement
+    (set_statement
+      (keyword_set)
+      (set_assignment
+        (identifier)
+        (literal
+          (literal)))))
+  (statement
+    (unset_statement
+      (keyword_unset)
+      (identifier)))
+  (statement
+    (show_statement
+      (keyword_show)
+      (identifier)
+      (keyword_like)
+      (literal)
+      (keyword_in)
+      (keyword_schema)
+      (object_reference
+        (identifier))
+      (keyword_limit)
+      (literal)))
+  (statement
+    (describe_statement
+      (keyword_describe)
+      (identifier)
+      (object_reference
+        (identifier)
+        (identifier))))
+  (statement
+    (describe_statement
+      (keyword_describe)
+      (identifier)
+      (object_reference
+        (identifier)
+        (identifier))
+      (varchar
+        (keyword_varchar))))
+  (statement
+    (call_statement
+      (keyword_call)
+      (invocation
+        (object_reference
+          (identifier)
+          (identifier))
+        (literal))))
+  (statement
+    (call_statement
+      (keyword_call)
+      (invocation
+        (object_reference
+          (identifier)
+          (identifier))
+        (named_argument
+          (identifier)
+          (literal))))))
+
+================================================================================
+transactions
+================================================================================
+
+BEGIN TRANSACTION;
+INSERT INTO t SELECT 1;
+COMMIT;
+ROLLBACK;
+
+---
+
+(program
+  (statement
+    (begin_transaction_statement
+      (keyword_begin)
+      (keyword_transaction)))
+  (statement
+    (insert_statement
+      (keyword_insert)
+      (keyword_into)
+      (object_reference
+        (identifier))
+      (statement
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              (literal)))))))
+  (statement
+    (commit_statement
+      (keyword_commit)))
+  (statement
+    (rollback_statement
+      (keyword_rollback))))
+
+================================================================================
+alter account and copy into column list
+================================================================================
+
+ALTER ACCOUNT SET TIMEZONE = 'America/New_York';
+
+COPY INTO DB1.S3.T6 ("Col_A", "Col_B")
+FROM (SELECT $1, $2 FROM @DB1.S1.STG1/p1/)
+FILE_FORMAT = (TYPE = CSV);
+
+---
+
+(program
+  (statement
+    (alter_account
+      (keyword_alter)
+      (keyword_account)
+      (keyword_set)
+      (option
+        (identifier)
+        (literal
+          (literal)))))
+  (statement
+    (copy_into_statement
+      (keyword_copy)
+      (keyword_into)
+      (object_reference
+        (identifier)
+        (identifier)
+        (identifier))
+      (identifier)
+      (identifier)
+      (keyword_from)
+      (subquery
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              (field
+                (identifier)))
+            (term
+              (field
+                (identifier)))))
+        (from
+          (keyword_from)
+          (relation
+            (stage_source
+              (stage_reference)))))
+      (option
+        (identifier)
+        (option
+          (identifier)
+          (object_reference
+            (identifier)))))))
+
+================================================================================
+grant on procedure signature and truncate
+================================================================================
+
+GRANT USAGE ON PROCEDURE DB1.S2.P1(VARCHAR, NUMBER) TO ROLE ROLE2;
+REVOKE SELECT ON FUNCTION DB1.S2.F1(VARCHAR) FROM ROLE ROLE2;
+TRUNCATE TABLE DB1.S2.T1;
+TRUNCATE IF EXISTS DB1.S2.T2;
+
+---
+
+(program
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (grant_core
+        (privilege_list
+          (privilege
+            (keyword_usage)))
+        (keyword_on)
+        (object_kind
+          (keyword_procedure))
+        (object_reference
+          (identifier)
+          (identifier)
+          (identifier))
+        (varchar
+          (keyword_varchar))
+        (number
+          (keyword_number))
+        (keyword_to)
+        (grantee
+          (keyword_role)
+          (identifier)))))
+  (statement
+    (revoke_statement
+      (keyword_revoke)
+      (grant_core
+        (privilege_list
+          (privilege
+            (keyword_select)))
+        (keyword_on)
+        (object_kind
+          (keyword_function))
+        (object_reference
+          (identifier)
+          (identifier)
+          (identifier))
+        (varchar
+          (keyword_varchar))
+        (keyword_from)
+        (grantee
+          (keyword_role)
+          (identifier)))))
+  (statement
+    (truncate_statement
+      (keyword_truncate)
+      (keyword_table)
+      (object_reference
+        (identifier)
+        (identifier)
+        (identifier))))
+  (statement
+    (truncate_statement
+      (keyword_truncate)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        (identifier)
+        (identifier)
+        (identifier)))))

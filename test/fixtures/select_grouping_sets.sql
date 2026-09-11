@@ -1,0 +1,8 @@
+SELECT
+    C1,
+    C2,
+    COUNT(*) AS N,
+    SUM(C3) AS TOTAL
+FROM DB1.S2.T2
+GROUP BY GROUPING SETS ((C1), (C1, C2), ())
+ORDER BY C1, C2;

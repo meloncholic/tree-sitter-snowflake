@@ -1,0 +1,8 @@
+create or replace MATERIALIZED VIEW DB1.S2.MV1 AS
+SELECT C1, SUM(C3) AS TOTAL FROM DB1.S2.T2 GROUP BY C1;
+
+create or replace DYNAMIC TABLE DB1.S2.DT1
+	target_lag = '1 minute'
+	warehouse = WH1
+AS
+SELECT C1, COUNT(*) AS N FROM DB1.S2.T2 GROUP BY C1;

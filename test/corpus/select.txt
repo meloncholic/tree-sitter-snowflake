@@ -1,0 +1,576 @@
+================================================================================
+simple select
+================================================================================
+
+SELECT 1;
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (literal))))))
+
+================================================================================
+select with from and alias
+================================================================================
+
+SELECT a.col AS c
+FROM db.schema.tbl t;
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (field
+            (object_reference
+              (identifier))
+            (identifier))
+          (keyword_as)
+          (identifier))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier)
+          (identifier)
+          (identifier))
+        (identifier)))))
+
+================================================================================
+qualify and window function
+================================================================================
+
+SELECT user_id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ts DESC) AS rn
+FROM events
+QUALIFY rn = 1;
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (field
+            (identifier)))
+        (term
+          (window_function
+            (invocation
+              (object_reference
+                (identifier)))
+            (keyword_over)
+            (window_specification
+              (partition_by
+                (keyword_partition)
+                (keyword_by)
+                (field
+                  (identifier)))
+              (order_by
+                (keyword_order)
+                (keyword_by)
+                (order_target
+                  (field
+                    (identifier))
+                  (direction
+                    (keyword_desc))))))
+          (keyword_as)
+          (identifier))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier)))
+      (qualify
+        (keyword_qualify)
+        (binary_expression
+          (field
+            (identifier))
+          (literal))))))
+
+================================================================================
+recursive cte and set operations
+================================================================================
+
+WITH RECURSIVE nums AS (
+  SELECT 1 AS n
+  UNION ALL
+  SELECT n + 1 FROM nums
+)
+SELECT * FROM nums
+MINUS
+SELECT * FROM other;
+
+---
+
+(program
+  (statement
+    (keyword_with)
+    (keyword_recursive)
+    (cte
+      (identifier)
+      (keyword_as)
+      (statement
+        (set_operation
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                (literal)
+                (keyword_as)
+                (identifier))))
+          (keyword_union)
+          (keyword_all)
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                (binary_expression
+                  (field
+                    (identifier))
+                  (literal)))))
+          (from
+            (keyword_from)
+            (relation
+              (object_reference
+                (identifier)))))))
+    (set_operation
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            (all_fields))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            (identifier))))
+      (keyword_minus)
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            (all_fields))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            (identifier)))))))
+
+================================================================================
+lateral flatten with named argument
+================================================================================
+
+SELECT f.value:fruit::STRING AS fruit
+FROM produce p,
+LATERAL FLATTEN(input => p.basket) f;
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (cast_expression
+            (semi_structured
+              (field
+                (object_reference
+                  (identifier))
+                (identifier))
+              (identifier))
+            (keyword_string))
+          (keyword_as)
+          (identifier))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier))
+        (identifier))
+      (relation
+        (keyword_lateral)
+        (invocation
+          (object_reference
+            (identifier))
+          (named_argument
+            (identifier)
+            (field
+              (object_reference
+                (identifier))
+              (identifier))))
+        (identifier)))))
+
+================================================================================
+star modifiers: exclude and rename
+================================================================================
+
+SELECT * EXCLUDE (secret), t.* RENAME (a AS b) FROM tbl;
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (all_fields
+            (keyword_exclude)
+            (field
+              (identifier))))
+        (term
+          (all_fields
+            (object_reference
+              (identifier))
+            (keyword_rename)
+            (rename_pair
+              (field
+                (identifier))
+              (keyword_as)
+              (identifier))))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier))))))
+
+================================================================================
+limit offset and nulls ordering
+================================================================================
+
+SELECT c FROM t
+ORDER BY c DESC NULLS LAST
+LIMIT 10 OFFSET 5;
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (field
+            (identifier)))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier)))
+      (order_by
+        (keyword_order)
+        (keyword_by)
+        (order_target
+          (field
+            (identifier))
+          (direction
+            (keyword_desc)
+            (keyword_nulls)
+            (keyword_last))))
+      (limit
+        (keyword_limit)
+        (literal)
+        (keyword_offset)
+        (literal)))))
+
+================================================================================
+grouping sets
+================================================================================
+
+SELECT dept, SUM(salary) FROM emp
+GROUP BY GROUPING SETS ((dept), ());
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (field
+            (identifier)))
+        (term
+          (invocation
+            (object_reference
+              (identifier))
+            (field
+              (identifier))))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier)))
+      (group_by
+        (keyword_group)
+        (keyword_by)
+        (grouping_sets
+          (keyword_grouping)
+          (keyword_sets)
+          (parenthesized_expression
+            (field
+              (identifier))))))))
+
+================================================================================
+positional staged columns
+================================================================================
+
+SELECT $1 AS a, $2 AS b
+FROM @my_stage/data.csv (FILE_FORMAT => 'CSV');
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (field
+            (identifier))
+          (keyword_as)
+          (identifier))
+        (term
+          (field
+            (identifier))
+          (keyword_as)
+          (identifier))))
+    (from
+      (keyword_from)
+      (relation
+        (stage_source
+          (stage_reference)
+          (named_argument
+            (identifier)
+            (literal
+              (literal))))))))
+
+================================================================================
+match recognize
+================================================================================
+
+SELECT * FROM prices
+MATCH_RECOGNIZE (
+  PARTITION BY symbol
+  ORDER BY ts
+  MEASURES price AS last_price
+  ROWS PER MATCH
+  PATTERN (STRT UP+)
+  DEFINE UP AS up.price > 0
+) mr;
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (all_fields))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier)))
+      (match_recognize
+        (keyword_match_recognize)
+        (partition_by
+          (keyword_partition)
+          (keyword_by)
+          (field
+            (identifier)))
+        (order_by
+          (keyword_order)
+          (keyword_by)
+          (order_target
+            (field
+              (identifier))))
+        (keyword_measures)
+        (measure_definition
+          (field
+            (identifier))
+          (keyword_as)
+          (identifier))
+        (keyword_rows)
+        (keyword_per)
+        (keyword_match)
+        (keyword_pattern)
+        (keyword_define)
+        (define_argument
+          (identifier)
+          (keyword_as)
+          (binary_expression
+            (field
+              (object_reference
+                (identifier))
+              (identifier))
+            (literal)))
+        (identifier)))))
+
+================================================================================
+match recognize one row per match and skip
+================================================================================
+
+SELECT C1, C3 FROM DB1.S3.T5
+MATCH_RECOGNIZE (
+    PARTITION BY C1
+    ORDER BY C2
+    MEASURES FIRST(C3) AS ST
+    ONE ROW PER MATCH
+    AFTER MATCH SKIP PAST LAST ROW
+    PATTERN (UP+ DOWN+)
+    DEFINE UP AS C3 > LAG(C3), DOWN AS C3 < LAG(C3)
+);
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (field
+            (identifier)))
+        (term
+          (field
+            (identifier)))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier)
+          (identifier)
+          (identifier)))
+      (match_recognize
+        (keyword_match_recognize)
+        (partition_by
+          (keyword_partition)
+          (keyword_by)
+          (field
+            (identifier)))
+        (order_by
+          (keyword_order)
+          (keyword_by)
+          (order_target
+            (field
+              (identifier))))
+        (keyword_measures)
+        (measure_definition
+          (invocation
+            (object_reference
+              (identifier))
+            (field
+              (identifier)))
+          (keyword_as)
+          (identifier))
+        (identifier)
+        (keyword_row)
+        (keyword_per)
+        (keyword_match)
+        (keyword_after)
+        (keyword_match)
+        (keyword_skip)
+        (keyword_past)
+        (keyword_last)
+        (keyword_row)
+        (keyword_pattern)
+        (keyword_define)
+        (define_argument
+          (identifier)
+          (keyword_as)
+          (binary_expression
+            (field
+              (identifier))
+            (invocation
+              (object_reference
+                (identifier))
+              (field
+                (identifier)))))
+        (define_argument
+          (identifier)
+          (keyword_as)
+          (binary_expression
+            (field
+              (identifier))
+            (invocation
+              (object_reference
+                (identifier))
+              (field
+                (identifier)))))))))
+
+================================================================================
+bare nulls ordering in window order
+================================================================================
+
+SELECT C1, ROW_NUMBER() OVER (PARTITION BY C2 ORDER BY C1 NULLS LAST) AS RN
+FROM DB1.S2.T2
+ORDER BY C1 DESC NULLS FIRST, C2 NULLS LAST;
+
+---
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          (field
+            (identifier)))
+        (term
+          (window_function
+            (invocation
+              (object_reference
+                (identifier)))
+            (keyword_over)
+            (window_specification
+              (partition_by
+                (keyword_partition)
+                (keyword_by)
+                (field
+                  (identifier)))
+              (order_by
+                (keyword_order)
+                (keyword_by)
+                (order_target
+                  (field
+                    (identifier))
+                  (direction
+                    (keyword_nulls)
+                    (keyword_last))))))
+          (keyword_as)
+          (identifier))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          (identifier)
+          (identifier)
+          (identifier)))
+      (order_by
+        (keyword_order)
+        (keyword_by)
+        (order_target
+          (field
+            (identifier))
+          (direction
+            (keyword_desc)
+            (keyword_nulls)
+            (keyword_first)))
+        (order_target
+          (field
+            (identifier))
+          (direction
+            (keyword_nulls)
+            (keyword_last)))))))
