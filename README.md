@@ -50,9 +50,10 @@ exposes the body so another grammar can:
   source, and the single-quoted form's `''` doubling means its byte range is not the embedded
   language's source.
 
-See `docs/consumer-integration.md` for what a consumer does with this: the second-parse step for
-both body forms, position mapping for the single-quoted case, and the "unmeasured, not zero"
-reporting rule for a language the host has no grammar for.
+The companion [`snowflake-bodies`](snowflake-bodies/README.md) crate implements extraction,
+source-position mapping, embedded parsing, and advisory restriction checks. JavaScript and Python
+are included; Java and Scala are optional Cargo features. The grammar package does not depend on
+the companion. See `docs/consumer-integration.md` for measurement and masking integration.
 
 ## Building
 
@@ -79,6 +80,8 @@ and check that `src/parser.c`'s modification time moved before trusting a test r
 
 ```sh
 tree-sitter test
+cargo test --workspace
+cargo test -p snowflake-bodies --all-features
 ```
 
 On a machine without MSVC, point the CLI at another C compiler:
@@ -102,10 +105,10 @@ committed).
 
 `cadence` (source measurement) and `marlin` (structural and vocabulary linting) both already link
 `tree-sitter-javascript` and `tree-sitter-python`, so consuming this grammar's foreign-language
-body injection costs neither a new dependency for the two languages the org's corpus actually
+body analysis adds no new grammar dependency for the two languages the org's corpus actually
 uses. `docs/consumer-integration.md` covers the profile/masking-mode shape each needs and the
-second-parse step for foreign-language bodies. `clause` (SQL linting and formatting) is
-undecided — see that document for the open question.
+shared body-analysis API. `clause` (SQL linting and formatting) will use the grammar as a
+differential-testing oracle rather than a runtime parser, after its T-SQL parity milestone.
 
 ## License
 

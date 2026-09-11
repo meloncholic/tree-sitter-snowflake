@@ -1,3 +1,7 @@
+[workspace]
+members = ["snowflake-bodies"]
+resolver = "3"
+
 [package]
 name = "tree-sitter-snowflake"
 description = "Tree-sitter grammar for Snowflake SQL"

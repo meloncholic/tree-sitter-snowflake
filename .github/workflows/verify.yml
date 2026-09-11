@@ -156,13 +156,15 @@ jobs:
         run: node tools/keyword-probe.mjs
 
       - name: Format check
-        run: cargo fmt --check
+        run: cargo fmt --all --check
 
       - name: Clippy
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
       - name: Cargo build & test
-        run: cargo test
+        run: |
+          cargo test --workspace
+          cargo test -p snowflake-bodies --all-features
 
   consumer-pin:
     name: Rust build/test against tree-sitter 0.26 (the consumers' pin)
@@ -190,11 +192,14 @@ jobs:
       # stay one that version accepts. Edit the manifest in-job and test
       # there. The `^tree-sitter = ` anchor matches only the dev-dependency —
       # `tree-sitter-language` in [dependencies] has a different prefix.
+      # Pin the companion's runtime dependency too, so its returned trees
+      # use the same tree-sitter types as a 0.26 consumer.
       - name: Pin tree-sitter to 0.26 and test
         run: |
           sed -i 's/^tree-sitter = .*/tree-sitter = "0.26"/' Cargo.toml
-          grep 'tree-sitter = ' Cargo.toml
-          cargo test
+          sed -i 's/^tree-sitter = .*/tree-sitter = "0.26"/' snowflake-bodies/Cargo.toml
+          grep 'tree-sitter = ' Cargo.toml snowflake-bodies/Cargo.toml
+          cargo test --workspace --all-features
 
   node-binding:
     name: Node binding build/test

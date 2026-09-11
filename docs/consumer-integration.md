@@ -1,8 +1,9 @@
 # Consumer integration
 
-What `cadence`, `marlin`, and `clause` each need to do with this grammar. None of this work lives
-in this repository — it is the consumer-side half of the contract the grammar's node shapes were
-designed to support.
+What `cadence`, `marlin`, and `clause` each need to do with this grammar. The companion
+[`snowflake-bodies`](../snowflake-bodies/README.md) crate provides shared foreign-body extraction,
+position mapping, parsing, and advisory restriction checks. Profiles, dialect selection, masking,
+and metric attribution remain consumer responsibilities.
 
 ## cadence
 
@@ -25,9 +26,9 @@ T-SQL profile already uses, so the traversal code's existing handling for gramma
 these as plain named children rather than fields applies unchanged.
 
 `cadence` also needs a `Snowflake` variant reachable from its per-path dialect glob mapping (see
-"Dialect selection" below) and the foreign-language second-parse step (see "Foreign-language
-bodies" below), which needs no new dependency — `cadence` already links `tree-sitter-javascript`
-and `tree-sitter-python`.
+"Dialect selection" below) and integration with `snowflake-bodies` (see "Foreign-language
+bodies" below). The companion uses the JavaScript/Python grammar versions already linked by
+`cadence`; it adds no new embedded language unless Java or Scala is enabled.
 
 `cadence`'s language profiles, structural traversal, and masking logic are kept in sync with
 `marlin`'s equivalents by hand, with no dependency between the repositories. A Snowflake profile
@@ -108,15 +109,25 @@ per-path selection regardless of which reading of "Consumer: clause" above it se
 
 ## Foreign-language bodies
 
+Use `snowflake_bodies::Analyzer` to obtain reconstructed source and embedded trees instead of
+duplicating body decoding. Inspect both `Analysis::sql_errors` and each `Body::status`; only
+`Parsed` means the embedded syntax parsed successfully. Map embedded byte ranges with
+`BodySource::source_range`, and pass the resulting SQL byte offset to `source_point` for a
+zero-based row and byte column. `Body::findings` already contains absolute SQL ranges.
+Reuse the analyzer across files. Enable the `java` or `scala` features when those languages are
+needed; otherwise they explicitly report `UnavailableLanguage` while retaining decoded source.
+The crate does not calculate complexity or implement vocabulary masking. Its queries and rule
+catalog are reusable independently, with detection limits documented in its README.
+
+The following describes the source and attribution contract implemented by that shared API.
+
 A Snowflake procedure or function's `language` field names `SQL`, `JAVASCRIPT`, `PYTHON`, `JAVA`,
 or `SCALA`. Only `SQL` is parsed by this grammar; the rest are a different language carried inside
-the body. The minimal consumer implementation is a second parse, not a full injection engine: find
-the body node, read the `language` field, look the language up in a small table of already-linked
-grammars, and parse the body with that grammar. The resulting tree is measured under that
+the body. The shared crate finds the body node, reads the `language` field, reconstructs its
+source, and dispatches the corresponding embedded grammar. The resulting tree is measured under that
 language's own existing profile — both `cadence` and `marlin` already have one for JavaScript and
 Python, which is every foreign-language body in the org's corpus today and the most likely next
-one. Java and Scala would need a new dependency in either consumer and are not currently written
-anywhere in the corpus.
+one. Java and Scala are available through optional features; neither appears in the measured corpus.
 
 The two body delimiter forms need different handling, and the corpus this grammar was built
 against uses the harder one almost exclusively:
@@ -130,14 +141,15 @@ against uses the harder one almost exclusively:
   up with positions in the file, and tree-sitter's injection mechanism cannot reach it (it parses
   a range of the original source with no unescaping step). The grammar exposes every `''` as a
   `doubled_quote` node and every backslash escape as an `escape` node inside the content, so a
-  consumer reconstructs the real text by walking the content's children, collapsing each
+  shared crate reconstructs the real text, collapsing each
   `doubled_quote` to a single `'` and each `escape` to its escaped character, and records an
   offset table mapping positions in the reconstructed string back to byte positions in the
-  original file. Parse the reconstructed text with the target language's grammar, and use the
+  original file. Numeric escapes may span multiple content nodes. It parses the reconstructed
+  text with the target language's grammar; consumers use the
   offset table to translate any finding's position back to a real file location before reporting
   it.
 
-**Where a language has no linked grammar (Java, Scala today), report the body as unmeasured, never
+**Where a language has no linked grammar (Java/Scala when their features are disabled), report the body as unmeasured, never
 as measured-at-zero.** A body that is present but excluded from measurement is a known,
 communicable gap; a body silently counted as empty is a wrong number that looks like a clean file.
 This is also the fix for `marlin`'s existing PostgreSQL/plpgsql body handling, which exhibits the
