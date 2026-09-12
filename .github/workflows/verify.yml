@@ -29,6 +29,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   push:
     branches: [dev, main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -290,7 +291,7 @@ jobs:
           PYEOF
 
   ci:
-    name: ${{ github.event_name == 'pull_request' && 'Verify' || 'Verify (push)' }}
+    name: ${{ github.event_name == 'push' && 'Verify (push)' || 'Verify' }}
     needs: [verify, consumer-pin, node-binding, secret-scanning, pr-title, workflow-meta]
     if: always()
     runs-on: ubuntu-latest

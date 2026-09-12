@@ -5,6 +5,7 @@ on:
     branches: [main]
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -42,3 +43,4 @@ jobs:
               --title "chore: sync dev from main" \
               --body "Merges main back into dev after a promotion or release so dev stays a descendant of main. Merge once Verify passes; a conflict here needs manual resolution on a separate branch."
           fi
+          gh workflow run verify.yml --ref "$branch"
