@@ -8,6 +8,8 @@ import { spawnSync } from 'node:child_process';
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict';
+import { fixtureResult } from './fixture-result.mjs';
 
 const repo = fileURLToPath(new URL('..', import.meta.url));
 const exeCandidates = [
@@ -17,6 +19,7 @@ const exeCandidates = [
 const exe = exeCandidates.find((p) => statSync(p, { throwIfNoEntry: false })?.isFile());
 const cli = exe ?? 'tree-sitter';
 const fixtures = readdirSync(join(repo, 'test/fixtures')).filter((f) => f.endsWith('.sql'));
+assert(fixtures.length > 0, 'No SQL fixtures found');
 
 let bad = 0;
 for (const f of fixtures) {
@@ -24,12 +27,15 @@ for (const f of fixtures) {
     cwd: repo, encoding: 'utf8', maxBuffer: 1 << 26,
     env: { ...process.env, CC: 'gcc', CXX: 'g++' },
   });
-  const t = proc.stdout;
-  const errors = (t.match(/ERROR|MISSING/g) || []).length;
-  const zw = (t.match(/\[([0-9]+), ([0-9]+)\] - \[\1, \2\]/g) || []).length;
-  if (errors || zw) {
+  try {
+    const { errors, zeroWidth } = fixtureResult(proc);
+    if (errors || zeroWidth) {
+      bad++;
+      console.log(`${f}: errors=${errors} zero-width=${zeroWidth}`);
+    }
+  } catch (error) {
     bad++;
-    console.log(`${f}: errors=${errors} zero-width=${zw}`);
+    console.error(`${f}: ${error.message}`);
   }
 }
 console.log(bad ? `${bad}/${fixtures.length} fixture files with problems` : `all ${fixtures.length} fixtures parse clean (no ERROR/MISSING, no zero-width nodes)`);

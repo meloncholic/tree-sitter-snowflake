@@ -9,8 +9,7 @@ const binding = typeof process.versions.bun === "string"
   : (await import("node-gyp-build")).default(root);
 
 try {
-  const nodeTypes = await import(`${root}/src/node-types.json`, { with: { type: "json" } });
-  binding.nodeTypeInfo = nodeTypes.default;
+  binding.nodeTypeInfo = JSON.parse(readFileSync(new URL("../../src/node-types.json", import.meta.url), "utf8"));
 } catch { }
 
 const queries = [

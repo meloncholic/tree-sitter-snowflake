@@ -6,8 +6,8 @@
   "types": "bindings/node",
   "scripts": {
     "install": "node-gyp-build",
-    "prestart": "npx --yes --package=tree-sitter-cli@v0.27.0 -- tree-sitter build --wasm",
-    "start": "npx --yes --package=tree-sitter-cli@v0.27.0 -- tree-sitter playground",
+    "prestart": "tree-sitter build --wasm",
+    "start": "tree-sitter playground",
     "test": "node --test bindings/node/*_test.js"
   },
   "author": "M. Reifschneider",
@@ -17,6 +17,7 @@
     "node-gyp-build": "^4.8.0"
   },
   "devDependencies": {
+    "tree-sitter-cli": "0.27.0",
     "node-gyp": "^13.0.2",
     "tree-sitter": "^0.25.0"
   },

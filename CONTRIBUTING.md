@@ -2,9 +2,14 @@
 
 ## Build
 
+The exact CLI version is declared in `package.json` and resolved by `package-lock.json`.
+CI uses this same lockfile. When changing the CLI dependency, update its `allowScripts`
+entry before installing, then regenerate the lockfile.
+
 ```sh
-npm install --no-save tree-sitter-cli@0.27.0
-npx --yes --package=tree-sitter-cli@0.27.0 -- tree-sitter generate
+npm ci --ignore-scripts
+npm rebuild tree-sitter-cli
+npx --no-install tree-sitter generate
 cargo build
 ```
 
@@ -16,7 +21,7 @@ confirm that generation succeeded before trusting a subsequent test run.
 ## Test
 
 ```sh
-CC=gcc CXX=g++ npx --yes --package=tree-sitter-cli@0.27.0 -- tree-sitter test
+CC=gcc CXX=g++ npx --no-install tree-sitter test
 node tools/node-kinds.mjs --check
 node tools/fixture-check.mjs
 node tools/fixture-leak-grep.mjs
