@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { changedPaths, docsOnly, verifyResults } from './ci-policy.mjs';
+import { changedPaths, docsOnly, needsWindowsBinding, verifyResults } from './ci-policy.mjs';
+
+test('Node packaging changes receive Windows binding verification before merge', () => {
+  for (const path of ['bindings/node/index.js', 'bindings/node/index.d.ts', 'binding.gyp', 'package.json', 'package-lock.json', '.github/workflows/verify.yml']) assert(needsWindowsBinding([path]));
+  assert(!needsWindowsBinding(['README.md', 'grammar.js', 'snowflake-bodies/src/lib.rs']));
+});
 
 test('renames include the removed source path when classifying prose', () => {
   const files = changedPaths('base', 'head', (command, args) => {
