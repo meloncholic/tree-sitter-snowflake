@@ -21,17 +21,32 @@ jobs:
     name: Verify before publishing
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      commit: ${{ steps.release.outputs.commit }}
+      policy: ${{ steps.release.outputs.policy }}
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
-      - name: Checkout
+      - name: Checkout release validation from main
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.TAG }}
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24.x'
+      - name: Resolve a release tag on main and check its Cargo version
+        id: release
+        run: |
+          node tools/release-policy.mjs resolve
+          cp tools/package-check.mjs "$RUNNER_TEMP/release-package-check.mjs"
+      - name: Checkout the validated release commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.release.outputs.commit }}
+          persist-credentials: false
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # v1.97.0
       - name: Cache cargo registry and build artifacts
@@ -46,7 +61,7 @@ jobs:
       - name: Run corpus and highlight tests
         run: npx --no-install tree-sitter test
       - name: Verify package contents
-        run: node tools/package-check.mjs
+        run: node "$RUNNER_TEMP/release-package-check.mjs"
       - name: Cargo build & test
         run: cargo test
 
@@ -63,7 +78,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ needs.verify.outputs.commit }}
+          persist-credentials: false
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # v1.97.0
       - name: Cache cargo registry and build artifacts
@@ -77,8 +93,11 @@ jobs:
           status=$(curl -s -o /dev/null -w '%{http_code}' "https://crates.io/api/v1/crates/tree-sitter-snowflake/${version}")
           if [ "$status" = "200" ]; then
             echo "tree-sitter-snowflake@${version} is already published, skipping"
+          elif [ "$status" = "404" ]; then
+            cargo publish -p tree-sitter-snowflake
           else
-            cargo publish
+            echo "crates.io lookup failed with HTTP ${status}" >&2
+            exit 1
           fi
 
   publish-npm:
@@ -95,33 +114,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ needs.verify.outputs.commit }}
+          persist-credentials: false
+      - name: Checkout release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.policy }}
+          path: .release-tools
+          sparse-checkout: tools/release-policy.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24.x'
           registry-url: https://registry.npmjs.org/
       - name: Set package version from tag
-        run: |
-          set -euo pipefail
-          version="${TAG#v}"
-          npm pkg set "version=${version}"
-          VERSION="$version" node -e '
-            const fs = require("fs");
-            const meta = JSON.parse(fs.readFileSync("tree-sitter.json", "utf8"));
-            meta.metadata.version = process.env.VERSION;
-            fs.writeFileSync("tree-sitter.json", JSON.stringify(meta, null, 2) + "\n");
-          '
+        id: package
+        env:
+          RELEASE_COMMIT: ${{ needs.verify.outputs.commit }}
+        run: node .release-tools/tools/release-policy.mjs prepare-npm
       - name: Publish (skip if this version is already live)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PROVENANCE: ${{ steps.package.outputs.provenance }}
         run: |
           set -euo pipefail
           version="${TAG#v}"
           if npm view "tree-sitter-snowflake@${version}" version >/dev/null 2>&1; then
             echo "tree-sitter-snowflake@${version} is already published, skipping"
           else
-            npm publish --access public --provenance
+            npm publish --access public --provenance="$PROVENANCE"
           fi
 
   publish-github-packages:
@@ -138,7 +161,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ needs.verify.outputs.commit }}
+          persist-credentials: false
+      - name: Checkout release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.policy }}
+          path: .release-tools
+          sparse-checkout: tools/release-policy.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -148,9 +180,8 @@ jobs:
       - name: Set package name and version for GitHub Packages
         run: |
           set -euo pipefail
-          version="${TAG#v}"
           npm pkg set "name=@meloncholic/tree-sitter-snowflake"
-          npm pkg set "version=${version}"
+          node .release-tools/tools/release-policy.mjs prepare-npm
       - name: Publish (skip if this version is already live)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -165,7 +196,7 @@ jobs:
 
   github-release:
     name: Create GitHub Release
-    needs: [publish-crate, publish-npm, publish-github-packages]
+    needs: [verify, publish-crate, publish-npm, publish-github-packages]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -176,12 +207,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.TAG }}
+          ref: ${{ needs.verify.outputs.commit }}
+          persist-credentials: false
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "$TAG" --generate-notes
+            gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
           fi

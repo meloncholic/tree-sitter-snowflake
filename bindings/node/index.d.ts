@@ -14,8 +14,8 @@ type NodeInfo =
       subtypes: BaseNode[];
     })
   | (BaseNode & {
-      fields: { [name: string]: ChildNode };
-      children: ChildNode[];
+      fields?: { [name: string]: ChildNode };
+      children?: ChildNode;
     });
 
 /**
@@ -31,6 +31,9 @@ type NodeInfo =
  * parser.setLanguage(Snowflake);
  */
 declare const binding: {
+  /** The language name. */
+  name: "snowflake";
+
   /**
    * The inner language object.
    * @private

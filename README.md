@@ -52,6 +52,24 @@ source-position mapping, embedded parsing, and advisory restriction checks. Java
 are included; Java and Scala are optional Cargo features. The grammar package does not depend on
 the companion. See `docs/consumer-integration.md` for measurement and masking integration.
 
+## Node package metadata
+
+The default export exposes `name`, `language`, and `nodeTypeInfo` on Linux and Windows.
+`nodeTypeInfo` contains the entries from `src/node-types.json`: an entry's optional `children`
+property is an object with `multiple`, `required`, and `types` properties, not an array.
+Leaf entries can omit both `fields` and `children`.
+
+```js
+import Snowflake from 'tree-sitter-snowflake';
+
+const program = Snowflake.nodeTypeInfo.find((node) => node.type === 'program');
+console.log(program?.children?.types);
+```
+
+Release jobs require a version tag on `main` matching the Cargo package version and publish
+from the commit that passed verification. The npm and GitHub Packages archives carry that
+same version in both `package.json` and `tree-sitter.json`.
+
 ## Building
 
 ```sh
