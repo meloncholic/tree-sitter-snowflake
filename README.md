@@ -10,7 +10,7 @@ best-effort tree.
 **Status: Tier 1 and Tier 2 coverage complete, plus most of Tier 3.** `SELECT` in full (CTEs incl.
 recursive, set operators, joins incl. `LATERAL`, `QUALIFY`, `GROUP BY GROUPING SETS`/`CUBE`/
 `ROLLUP`, window functions, `MATCH_RECOGNIZE`, `PIVOT`/`UNPIVOT`), `MERGE`, `CREATE`/`ALTER`/`DROP`
-for every object family the org scripts (table, view, materialized and dynamic table, stage, file
+for supported object families (table, view, materialized and dynamic table, stage, file
 format, stream, pipe, task, warehouse, database, schema, role, user, sequence, tag, integration,
 streamlit, Cortex search service and agent, semantic view), `GRANT`/`REVOKE` incl. future grants,
 `COPY INTO` both directions, `PUT`/`GET`/`LIST`/`REMOVE`, `CALL`/`USE`/`SET`/`UNSET`/`SHOW`/
@@ -18,12 +18,10 @@ streamlit, Cortex search service and agent, semantic view), `GRANT`/`REVOKE` inc
 control flow complete through cursors, `RESULTSET`, `EXECUTE IMMEDIATE`, and `EXCEPTION ... WHEN`,
 and the semi-structured `:` path operator, `LATERAL FLATTEN`, `IDENTIFIER(...)`, `* EXCLUDE`/
 `RENAME`, session variables (`$var`), positional/named binds, `ARRAY`/`OBJECT` constructors, and
-`=>` named arguments. Not yet consumed by any downstream project — see "Consumers" below.
+`=>` named arguments. See "Consumer integration" below for application guidance.
 
-Measured against the two Snowflake repositories this grammar was built to unblock (see
-`tools/parse-rate/BASELINE.md`): 99.8% of files in `snowflake` and 100% of files in
-`snowflake-dw` parse with zero `ERROR`/`MISSING` bytes, against a 0.1%/17.4% baseline for the
-general-SQL grammar the org used before this one existed.
+The repository includes synthetic fixtures and a parse-rate harness for evaluating a local
+Snowflake SQL corpus. See "Testing" below for validation commands.
 
 This is a from-scratch grammar, not a fork — see `NOTICE` for what it adapts from third-party
 sources (a substantially reduced dollar-quoting scanner) and what it takes as style reference
@@ -40,8 +38,7 @@ exposes the body so another grammar can:
 - The body's content — the text between the delimiters, excluding the delimiters themselves — is
   its own node, distinct for the two delimiter forms Snowflake accepts:
   `dollar_quoted_body`/`dollar_quoted_script`/`dollar_quoted_expression` for `$$ ... $$`, and
-  `string_body` for the single-quoted `AS '...'` form, which is the one every JavaScript procedure
-  in the org's corpus actually uses.
+  `string_body` for the single-quoted `AS '...'` form.
 - `string_body`'s doubled-apostrophe escape (`''`) and backslash escapes are their own
   `doubled_quote`/`escape` nodes inside the content, so a consumer can reconstruct the real text
   and map a position in it back to a position in the file without re-lexing the body by hand.
@@ -50,9 +47,10 @@ exposes the body so another grammar can:
   source, and the single-quoted form's `''` doubling means its byte range is not the embedded
   language's source.
 
-See `docs/consumer-integration.md` for what a consumer does with this: the second-parse step for
-both body forms, position mapping for the single-quoted case, and the "unmeasured, not zero"
-reporting rule for a language the host has no grammar for.
+The companion [`snowflake-bodies`](snowflake-bodies/README.md) crate implements extraction,
+source-position mapping, embedded parsing, and advisory restriction checks. JavaScript and Python
+are included; Java and Scala are optional Cargo features. The grammar package does not depend on
+the companion. See `docs/consumer-integration.md` for measurement and masking integration.
 
 ## Building
 
@@ -79,6 +77,8 @@ and check that `src/parser.c`'s modification time moved before trusting a test r
 
 ```sh
 tree-sitter test
+cargo test --workspace
+cargo test -p snowflake-bodies --all-features
 ```
 
 On a machine without MSVC, point the CLI at another C compiler:
@@ -95,17 +95,17 @@ alias slot and the unqualified column slot, the two positions where a keyword ca
 identifier. `tools/node-kinds.mjs --check` diffs the exported node-kind set against the committed
 snapshot in `test/node-kinds.txt` — a rename or removal there is a major version bump.
 `tools/parse-rate/parse-rate.mjs` measures the parse-rate budget over a real, locally-provided
-Snowflake corpus (see `tools/parse-rate/BASELINE.md` — the corpus itself is private and not
-committed).
+Snowflake corpus supplied by the caller. The committed fixtures are synthetic.
 
-## Consumers
+## Consumer integration
 
-`cadence` (source measurement) and `marlin` (structural and vocabulary linting) both already link
-`tree-sitter-javascript` and `tree-sitter-python`, so consuming this grammar's foreign-language
-body injection costs neither a new dependency for the two languages the org's corpus actually
-uses. `docs/consumer-integration.md` covers the profile/masking-mode shape each needs and the
-second-parse step for foreign-language bodies. `clause` (SQL linting and formatting) is
-undecided — see that document for the open question.
+Editors, source-analysis tools, and linters can use the grammar's named nodes and query files
+to analyze Snowflake SQL. The companion `snowflake-bodies` crate provides embedded-language
+parsing and source mapping. Tools with their own SQL parser can also use this grammar for
+differential testing.
+
+See [Consumer integration](docs/consumer-integration.md) for structural node mappings, explicit
+dialect selection, comment/string masking, body analysis, and version compatibility.
 
 ## License
 
