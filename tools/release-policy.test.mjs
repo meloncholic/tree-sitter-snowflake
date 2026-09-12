@@ -5,7 +5,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
-import { prepareNpm, releaseVersion, resolveRelease } from './release-policy.mjs';
+import { canAttest, prepareNpm, releaseVersion, resolveRelease } from './release-policy.mjs';
+
+test('npm provenance requires both the release tag and verified source commit', () => {
+  assert(canAttest('v0.1.1', 'abc', 'refs/tags/v0.1.1', 'abc'));
+  assert(!canAttest('v0.1.1', 'abc', 'refs/heads/main', 'abc'));
+  assert(!canAttest('v0.1.1', 'abc', 'refs/tags/v0.1.1', 'def'));
+  assert(!canAttest('v0.1.1', 'abc', 'refs/tags/v0.1.0', 'abc'));
+  assert(!canAttest('v0.1.1', undefined, 'refs/tags/v0.1.1', undefined));
+});
 
 test('release tags must be stable versions matching the root package', () => {
   const manifest = '[workspace]\nmembers = []\n[package]\nversion = "0.1.1"\n';

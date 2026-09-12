@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 export function releaseVersion(tag, manifest) {
   assert(/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(tag), 'Expected a stable release tag such as v0.1.1');
@@ -20,7 +21,7 @@ export function resolveRelease(tag, run = execFileSync) {
   return commit;
 }
 
-export function prepareNpm(tag, root = new URL('../', import.meta.url)) {
+export function prepareNpm(tag, root = pathToFileURL(process.cwd() + '/')) {
   const version = releaseVersion(tag, readFileSync(new URL('Cargo.toml', root), 'utf8'));
   for (const name of ['package.json', 'tree-sitter.json']) {
     const path = new URL(name, root);
@@ -31,9 +32,16 @@ export function prepareNpm(tag, root = new URL('../', import.meta.url)) {
   }
 }
 
+export function canAttest(tag, commit, ref, sha) {
+  return Boolean(commit) && ref === `refs/tags/${tag}` && sha === commit;
+}
+
 if (process.argv[2] === 'resolve') {
   const commit = resolveRelease(process.env.TAG);
-  appendFileSync(process.env.GITHUB_OUTPUT, `commit=${commit}\n`);
+  const policy = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  appendFileSync(process.env.GITHUB_OUTPUT, `commit=${commit}\npolicy=${policy}\n`);
 } else if (process.argv[2] === 'prepare-npm') {
   prepareNpm(process.env.TAG);
+  const provenance = canAttest(process.env.TAG, process.env.RELEASE_COMMIT, process.env.GITHUB_REF, process.env.GITHUB_SHA);
+  appendFileSync(process.env.GITHUB_OUTPUT, `provenance=${provenance}\n`);
 }

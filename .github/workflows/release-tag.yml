@@ -40,4 +40,4 @@ jobs:
             git tag -a "${tag}" -m "${tag}"
             git push origin "${tag}"
           fi
-          gh workflow run release.yml --ref main -f "tag=${tag}"
+          gh workflow run release.yml --ref "$tag" -f "tag=${tag}"

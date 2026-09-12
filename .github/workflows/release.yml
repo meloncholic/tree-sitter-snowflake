@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       commit: ${{ steps.release.outputs.commit }}
+      policy: ${{ steps.release.outputs.policy }}
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
@@ -38,7 +39,9 @@ jobs:
           node-version: '24.x'
       - name: Resolve a release tag on main and check its Cargo version
         id: release
-        run: node tools/release-policy.mjs resolve
+        run: |
+          node tools/release-policy.mjs resolve
+          cp tools/package-check.mjs "$RUNNER_TEMP/release-package-check.mjs"
       - name: Checkout the validated release commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -58,7 +61,7 @@ jobs:
       - name: Run corpus and highlight tests
         run: npx --no-install tree-sitter test
       - name: Verify package contents
-        run: node tools/package-check.mjs
+        run: node "$RUNNER_TEMP/release-package-check.mjs"
       - name: Cargo build & test
         run: cargo test
 
@@ -113,23 +116,35 @@ jobs:
         with:
           ref: ${{ needs.verify.outputs.commit }}
           persist-credentials: false
+      - name: Checkout release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.policy }}
+          path: .release-tools
+          sparse-checkout: tools/release-policy.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24.x'
           registry-url: https://registry.npmjs.org/
       - name: Set package version from tag
-        run: node tools/release-policy.mjs prepare-npm
+        id: package
+        env:
+          RELEASE_COMMIT: ${{ needs.verify.outputs.commit }}
+        run: node .release-tools/tools/release-policy.mjs prepare-npm
       - name: Publish (skip if this version is already live)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PROVENANCE: ${{ steps.package.outputs.provenance }}
         run: |
           set -euo pipefail
           version="${TAG#v}"
           if npm view "tree-sitter-snowflake@${version}" version >/dev/null 2>&1; then
             echo "tree-sitter-snowflake@${version} is already published, skipping"
           else
-            npm publish --access public --provenance
+            npm publish --access public --provenance="$PROVENANCE"
           fi
 
   publish-github-packages:
@@ -148,6 +163,14 @@ jobs:
         with:
           ref: ${{ needs.verify.outputs.commit }}
           persist-credentials: false
+      - name: Checkout release tooling
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.policy }}
+          path: .release-tools
+          sparse-checkout: tools/release-policy.mjs
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -158,7 +181,7 @@ jobs:
         run: |
           set -euo pipefail
           npm pkg set "name=@meloncholic/tree-sitter-snowflake"
-          node tools/release-policy.mjs prepare-npm
+          node .release-tools/tools/release-policy.mjs prepare-npm
       - name: Publish (skip if this version is already live)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
