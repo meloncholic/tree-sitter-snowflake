@@ -37,11 +37,16 @@ jobs:
       - name: Cache cargo registry and build artifacts
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Regenerate the parser from grammar.js
-        run: npx --yes --package=tree-sitter-cli@0.27.0 -- tree-sitter generate
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild tree-sitter-cli
+          npx --no-install tree-sitter generate
       - name: Fail if the generated parser is out of date
         run: git diff --exit-code -- src/parser.c src/grammar.json src/node-types.json
       - name: Run corpus and highlight tests
-        run: npx --yes --package=tree-sitter-cli@0.27.0 -- tree-sitter test
+        run: npx --no-install tree-sitter test
+      - name: Verify package contents
+        run: node tools/package-check.mjs
       - name: Cargo build & test
         run: cargo test
 
@@ -83,6 +88,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+      id-token: write
     env:
       TAG: ${{ inputs.tag || github.ref_name }}
     steps:
@@ -95,8 +101,6 @@ jobs:
         with:
           node-version: '24.x'
           registry-url: https://registry.npmjs.org/
-      - name: Regenerate the parser from grammar.js
-        run: npx --yes --package=tree-sitter-cli@0.27.0 -- tree-sitter generate
       - name: Set package version from tag
         run: |
           set -euo pipefail
@@ -117,7 +121,7 @@ jobs:
           if npm view "tree-sitter-snowflake@${version}" version >/dev/null 2>&1; then
             echo "tree-sitter-snowflake@${version} is already published, skipping"
           else
-            npm publish --access public
+            npm publish --access public --provenance
           fi
 
   publish-github-packages:
@@ -141,8 +145,6 @@ jobs:
           node-version: '24.x'
           registry-url: https://npm.pkg.github.com
           scope: '@meloncholic'
-      - name: Regenerate the parser from grammar.js
-        run: npx --yes --package=tree-sitter-cli@0.27.0 -- tree-sitter generate
       - name: Set package name and version for GitHub Packages
         run: |
           set -euo pipefail

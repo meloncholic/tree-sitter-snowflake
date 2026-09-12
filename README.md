@@ -55,7 +55,9 @@ the companion. See `docs/consumer-integration.md` for measurement and masking in
 ## Building
 
 ```sh
-npx --package=tree-sitter-cli@0.27.0 -- tree-sitter generate
+npm ci --ignore-scripts
+npm rebuild tree-sitter-cli
+npx --no-install tree-sitter generate
 cargo build
 ```
 
