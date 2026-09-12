@@ -10,6 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -58,3 +59,4 @@ jobs:
           else
             gh pr create --base main --head "$branch" --title "chore(release): v${version}" --body "Automated version bump and CHANGELOG.md entry computed from Conventional Commits. Merge this once Verify passes to trigger the tag-and-publish sequence."
           fi
+          gh workflow run verify.yml --ref "$branch"
