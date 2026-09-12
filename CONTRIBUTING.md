@@ -8,7 +8,7 @@ entry before installing, then regenerate the lockfile.
 
 ```sh
 npm ci --ignore-scripts
-node node_modules/tree-sitter-cli/install.js
+npm rebuild tree-sitter-cli
 npx --no-install tree-sitter generate
 cargo build
 ```

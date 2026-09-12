@@ -39,7 +39,7 @@ jobs:
       - name: Regenerate the parser from grammar.js
         run: |
           npm ci --ignore-scripts
-          node node_modules/tree-sitter-cli/install.js
+          npm rebuild tree-sitter-cli
           npx --no-install tree-sitter generate
       - name: Fail if the generated parser is out of date
         run: git diff --exit-code -- src/parser.c src/grammar.json src/node-types.json

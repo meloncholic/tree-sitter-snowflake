@@ -157,7 +157,7 @@ jobs:
       - name: Install the tree-sitter CLI
         run: |
           npm ci --ignore-scripts
-          node node_modules/tree-sitter-cli/install.js
+          npm rebuild tree-sitter-cli
 
       - name: Regenerate the parser from grammar.js
         run: npx --no-install tree-sitter generate
