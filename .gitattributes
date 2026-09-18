@@ -1,3 +1,7 @@
+# Martin standard .gitattributes
+# Source of truth: the shared workspace templates/.gitattributes file
+# Propagate to repos via copy or sync script; do not edit copies in individual repos.
+
 # GitHub Linguist
 #
 # Controls how GitHub classifies files in the repository language bar.
@@ -11,16 +15,23 @@
 .githooks/**             text eol=lf
 
 # Shell scripts (always LF regardless of platform)
+.bashrc                  text eol=lf linguist-detectable=true linguist-language=Shell
+.bash_login              text eol=lf linguist-detectable=true linguist-language=Shell
+.bash_profile            text eol=lf linguist-detectable=true linguist-language=Shell
 *.bash                   text eol=lf linguist-detectable=true linguist-language=Shell
 *.envsh                  text eol=lf linguist-detectable=true linguist-language=Shell
 *.fish                   text eol=lf linguist-detectable=true linguist-language=Fish
+*.ksh                    text eol=lf linguist-detectable=true linguist-language=Shell
 *.sh                     text eol=lf linguist-detectable=true linguist-language=Shell
+*.shell                  text eol=lf linguist-detectable=true linguist-language=Shell
 *.zsh                    text eol=lf linguist-detectable=true linguist-language=Shell
 
 # Windows scripts (must use CRLF to run correctly on Windows)
 *.bat                    text eol=crlf
 *.cmd                    text eol=crlf
 *.ps1                    text eol=crlf linguist-detectable=true linguist-language=PowerShell
+*.psd1                   text eol=crlf linguist-detectable=true linguist-language=PowerShell
+*.psm1                   text eol=crlf linguist-detectable=true linguist-language=PowerShell
 
 # Python
 *.py                     text eol=lf linguist-detectable=true linguist-language=Python
@@ -28,6 +39,10 @@
 
 # Rust
 *.rs                     text eol=lf linguist-detectable=true linguist-language=Rust
+
+# Go
+*.go                     text eol=lf linguist-detectable=true linguist-language=Go
+go.mod                   text eol=lf linguist-detectable=true linguist-language=go.mod
 
 # C / C++ (tree-sitter parsers, node-gyp native bindings)
 *.c                      text eol=lf linguist-detectable=true linguist-language=C
@@ -41,32 +56,52 @@ src/parser.c             linguist-generated=true
 
 # C# / .NET
 *.cs                     text eol=lf linguist-detectable=true linguist-language=C#
+*.csx                    text eol=lf linguist-detectable=true linguist-language=C#
 *.csproj                 text eol=lf
+*.cshtml                 text eol=lf linguist-detectable=true linguist-language=HTML+Razor
 *.sln                    text eol=lf
 *.props                  text eol=lf
 *.targets                text eol=lf
 *.resx                   text eol=lf
 *.xaml                   text eol=lf
-*.razor                  text eol=lf
+*.razor                  text eol=lf linguist-detectable=true linguist-language=HTML+Razor
 *.config                 text eol=lf
 *.runsettings            text eol=lf
 
+# VB.NET / ASP.NET
+*.vb                     text eol=lf linguist-detectable=true linguist-language=vb.net
+*.vbhtml                 text eol=lf linguist-detectable=true linguist-language=vb.net
+*.vbproj                 text eol=lf
+*.asax                   text eol=lf linguist-detectable=true linguist-language=aspx
+*.aspx                   text eol=lf linguist-detectable=true linguist-language=aspx
+*.ascx                   text eol=lf linguist-detectable=true linguist-language=aspx
+*.ashx                   text eol=lf linguist-detectable=true linguist-language=aspx
+*.asmx                   text eol=lf linguist-detectable=true linguist-language=aspx
+*.axd                    text eol=lf linguist-detectable=true linguist-language=aspx
+*.master                 text eol=lf linguist-detectable=true linguist-language=aspx
+
 # Web source files (force LF)
 *.cjs                    text eol=lf linguist-detectable=true linguist-language=JavaScript
-*.css                    text eol=lf
-*.html                   text eol=lf
+*.css                    text eol=lf linguist-detectable=true linguist-language=CSS
+*.htm                    text eol=lf linguist-detectable=true linguist-language=HTML
+*.html                   text eol=lf linguist-detectable=true linguist-language=HTML
 *.js                     text eol=lf linguist-detectable=true linguist-language=JavaScript
 *.jsx                    text eol=lf linguist-detectable=true linguist-language=JavaScript
-*.json                   text eol=lf
+*.json                   text eol=lf linguist-detectable=true linguist-language=JSON
 *.less                   text eol=lf
 *.md                     text eol=lf diff=markdown
 *.mdx                    text eol=lf diff=markdown
 *.mjs                    text eol=lf linguist-detectable=true linguist-language=JavaScript
-*.scss                   text eol=lf
+*.mts                    text eol=lf linguist-detectable=true linguist-language=TypeScript
+*.scss                   text eol=lf linguist-detectable=true linguist-language=SCSS
 *.ts                     text eol=lf linguist-detectable=true linguist-language=TypeScript
+*.cts                    text eol=lf linguist-detectable=true linguist-language=TypeScript
 *.tsx                    text eol=lf linguist-detectable=true linguist-language=TypeScript
-*.yaml                   text eol=lf
-*.yml                    text eol=lf
+*.yaml                   text eol=lf linguist-detectable=true linguist-language=YAML
+*.yml                    text eol=lf linguist-detectable=true linguist-language=YAML
+
+# Agent skill instructions
+SKILL.md                 text eol=lf diff=markdown linguist-detectable=true linguist-documentation=false
 
 # Data / config formats
 *.conf                   text eol=lf
@@ -74,19 +109,20 @@ src/parser.c             linguist-generated=true
 *.geojson                text eol=lf -diff
 *.gql                    text eol=lf
 *.graphql                text eol=lf
-*.ini                    text eol=lf
-*.jsonc                  text eol=lf
+*.ini                    text eol=lf linguist-detectable=true linguist-language=INI
+*.jsonc                  text eol=lf linguist-detectable=true linguist-language=jsonc
 *.log                    text eol=lf linguist-detectable=false
 *.map                    text eol=lf linguist-generated=true
 *.sql                    text eol=lf linguist-detectable=true linguist-language=SQL
 *.template               text eol=lf
-*.toml                   text eol=lf
+*.toml                   text eol=lf linguist-detectable=true linguist-language=TOML
 *.tsbuildinfo            text eol=lf linguist-generated=true export-ignore
 *.txt                    text eol=lf
-*.xml                    text eol=lf
+*.xml                    text eol=lf linguist-detectable=true linguist-language=XML
 
 # Containers & infrastructure
-*.bicep                  text eol=lf
+*.bicep                  text eol=lf linguist-detectable=true linguist-language=Bicep
+*.bicepparam             text eol=lf linguist-detectable=true linguist-language=Bicep
 Dockerfile               text eol=lf
 *.Dockerfile             text eol=lf
 *.dockerfile             text eol=lf
