@@ -11,13 +11,52 @@ trim_trailing_whitespace = true
 [*.{py,pyi}]
 indent_size = 4
 
-[*.{ps1,psm1}]
+[*.{c,h,cc,cpp,hpp,cs,csx,rs,vb}]
 indent_size = 4
 
-[*.{ts,tsx,js,jsx,css,scss,html,json,yml,yaml}]
+[*.go]
+indent_style = tab
+indent_size = tab
+
+[go.mod]
+indent_style = tab
+indent_size = tab
+
+[.npmrc]
+end_of_line = lf
+
+[.nvmrc]
+end_of_line = lf
+
+[.python-version]
+end_of_line = lf
+
+[Makefile]
+indent_style = tab
+indent_size = tab
+
+[*.{bat,cmd,ps1,psd1,psm1}]
+end_of_line = crlf
+
+[*.{ps1,psd1,psm1}]
+indent_size = 4
+
+[*.{bash,envsh,ksh,sh,shell,zsh}]
 indent_size = 2
 
-[*.md]
+[*.fish]
+indent_size = 2
+
+[.{bash_login,bash_profile,bashrc}]
+indent_size = 2
+
+[*.{ts,tsx,mts,cts,js,jsx,cjs,mjs,css,scss,html,htm,json,jsonc,toml,yml,yaml,xml,bicep,bicepparam}]
+indent_size = 2
+
+[*.{asax,aspx,ascx,ashx,asmx,axd,cshtml,master,razor,xaml,resx,config,csproj,vbproj}]
+indent_size = 2
+
+[*.{md,mdx}]
 indent_size = 2
 max_line_length = off
 trim_trailing_whitespace = false
