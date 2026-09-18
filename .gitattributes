@@ -36,7 +36,6 @@ src/parser.c             linguist-generated=true
 .editorconfig            text eol=lf export-ignore linguist-detectable=false
 .gitattributes           text eol=lf export-ignore linguist-detectable=false
 .gitignore               text eol=lf export-ignore linguist-detectable=false
-.npmrc                   text eol=lf export-ignore linguist-detectable=false
 .nvmrc                   text eol=lf export-ignore linguist-detectable=false
 CODEOWNERS               text eol=lf export-ignore linguist-detectable=false
 
