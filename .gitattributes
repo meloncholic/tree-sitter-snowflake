@@ -1,7 +1,3 @@
-# Martin standard .gitattributes
-# Source of truth: the shared workspace templates/.gitattributes file
-# Propagate to repos via copy or sync script; do not edit copies in individual repos.
-
 # GitHub Linguist
 #
 # Controls how GitHub classifies files in the repository language bar.
@@ -10,235 +6,59 @@
 # Handle line endings automatically for text files
 *                        text=auto
 
-# Git hooks (must remain LF for shell execution on all platforms)
-.husky/**                text eol=lf
-.githooks/**             text eol=lf
-
-# Shell scripts (always LF regardless of platform)
-.bashrc                  text eol=lf linguist-detectable=true linguist-language=Shell
-.bash_login              text eol=lf linguist-detectable=true linguist-language=Shell
-.bash_profile            text eol=lf linguist-detectable=true linguist-language=Shell
-*.bash                   text eol=lf linguist-detectable=true linguist-language=Shell
-*.envsh                  text eol=lf linguist-detectable=true linguist-language=Shell
-*.fish                   text eol=lf linguist-detectable=true linguist-language=Fish
-*.ksh                    text eol=lf linguist-detectable=true linguist-language=Shell
-*.sh                     text eol=lf linguist-detectable=true linguist-language=Shell
-*.shell                  text eol=lf linguist-detectable=true linguist-language=Shell
-*.zsh                    text eol=lf linguist-detectable=true linguist-language=Shell
-
-# Windows scripts (must use CRLF to run correctly on Windows)
-*.bat                    text eol=crlf
-*.cmd                    text eol=crlf
-*.ps1                    text eol=crlf linguist-detectable=true linguist-language=PowerShell
-*.psd1                   text eol=crlf linguist-detectable=true linguist-language=PowerShell
-*.psm1                   text eol=crlf linguist-detectable=true linguist-language=PowerShell
-
-# Python
-*.py                     text eol=lf linguist-detectable=true linguist-language=Python
-*.pyi                    text eol=lf linguist-detectable=true linguist-language=Python
-
 # Rust
 *.rs                     text eol=lf linguist-detectable=true linguist-language=Rust
 
-# Go
-*.go                     text eol=lf linguist-detectable=true linguist-language=Go
-go.mod                   text eol=lf linguist-detectable=true linguist-language=go.mod
-
-# C / C++ (tree-sitter parsers, node-gyp native bindings)
+# C / C++ (native tree-sitter parser and node-gyp bindings)
 *.c                      text eol=lf linguist-detectable=true linguist-language=C
 *.h                      text eol=lf
 *.cc                     text eol=lf linguist-detectable=true linguist-language=C++
-*.cpp                    text eol=lf linguist-detectable=true linguist-language=C++
-*.hpp                    text eol=lf
 *.gyp                    text eol=lf
 *.scm                    text eol=lf
 src/parser.c             linguist-generated=true
 
-# C# / .NET
-*.cs                     text eol=lf linguist-detectable=true linguist-language=C#
-*.csx                    text eol=lf linguist-detectable=true linguist-language=C#
-*.csproj                 text eol=lf
-*.cshtml                 text eol=lf linguist-detectable=true linguist-language=HTML+Razor
-*.sln                    text eol=lf
-*.props                  text eol=lf
-*.targets                text eol=lf
-*.resx                   text eol=lf
-*.xaml                   text eol=lf
-*.razor                  text eol=lf linguist-detectable=true linguist-language=HTML+Razor
-*.config                 text eol=lf
-*.runsettings            text eol=lf
-
-# VB.NET / ASP.NET
-*.vb                     text eol=lf linguist-detectable=true linguist-language=vb.net
-*.vbhtml                 text eol=lf linguist-detectable=true linguist-language=vb.net
-*.vbproj                 text eol=lf
-*.asax                   text eol=lf linguist-detectable=true linguist-language=aspx
-*.aspx                   text eol=lf linguist-detectable=true linguist-language=aspx
-*.ascx                   text eol=lf linguist-detectable=true linguist-language=aspx
-*.ashx                   text eol=lf linguist-detectable=true linguist-language=aspx
-*.asmx                   text eol=lf linguist-detectable=true linguist-language=aspx
-*.axd                    text eol=lf linguist-detectable=true linguist-language=aspx
-*.master                 text eol=lf linguist-detectable=true linguist-language=aspx
-
-# Web source files (force LF)
-*.cjs                    text eol=lf linguist-detectable=true linguist-language=JavaScript
-*.css                    text eol=lf linguist-detectable=true linguist-language=CSS
-*.htm                    text eol=lf linguist-detectable=true linguist-language=HTML
-*.html                   text eol=lf linguist-detectable=true linguist-language=HTML
+# JavaScript / TypeScript (node bindings and tooling scripts)
 *.js                     text eol=lf linguist-detectable=true linguist-language=JavaScript
-*.jsx                    text eol=lf linguist-detectable=true linguist-language=JavaScript
-*.json                   text eol=lf linguist-detectable=true linguist-language=JSON
-*.less                   text eol=lf
-*.md                     text eol=lf diff=markdown
-*.mdx                    text eol=lf diff=markdown
 *.mjs                    text eol=lf linguist-detectable=true linguist-language=JavaScript
-*.mts                    text eol=lf linguist-detectable=true linguist-language=TypeScript
-*.scss                   text eol=lf linguist-detectable=true linguist-language=SCSS
 *.ts                     text eol=lf linguist-detectable=true linguist-language=TypeScript
-*.cts                    text eol=lf linguist-detectable=true linguist-language=TypeScript
-*.tsx                    text eol=lf linguist-detectable=true linguist-language=TypeScript
-*.yaml                   text eol=lf linguist-detectable=true linguist-language=YAML
-*.yml                    text eol=lf linguist-detectable=true linguist-language=YAML
 
-# Agent skill instructions
-SKILL.md                 text eol=lf diff=markdown linguist-detectable=true linguist-documentation=false
+# Grammar test corpus and fixtures
+*.sql                    text eol=lf linguist-detectable=true linguist-language=SQL
+*.txt                    text eol=lf
 
 # Data / config formats
-*.conf                   text eol=lf
-*.csv                    text eol=lf
-*.geojson                text eol=lf -diff
-*.gql                    text eol=lf
-*.graphql                text eol=lf
-*.ini                    text eol=lf linguist-detectable=true linguist-language=INI
-*.jsonc                  text eol=lf linguist-detectable=true linguist-language=jsonc
-*.log                    text eol=lf linguist-detectable=false
-*.map                    text eol=lf linguist-generated=true
-*.sql                    text eol=lf linguist-detectable=true linguist-language=SQL
-*.template               text eol=lf
+*.json                   text eol=lf linguist-detectable=true linguist-language=JSON
 *.toml                   text eol=lf linguist-detectable=true linguist-language=TOML
-*.tsbuildinfo            text eol=lf linguist-generated=true export-ignore
-*.txt                    text eol=lf
-*.xml                    text eol=lf linguist-detectable=true linguist-language=XML
-
-# Containers & infrastructure
-*.bicep                  text eol=lf linguist-detectable=true linguist-language=Bicep
-*.bicepparam             text eol=lf linguist-detectable=true linguist-language=Bicep
-Dockerfile               text eol=lf
-*.Dockerfile             text eol=lf
-*.dockerfile             text eol=lf
-
-# Lock files (text for line ending normalization; suppress noisy diffs)
-*.lock                   text -diff
+*.yml                    text eol=lf linguist-detectable=true linguist-language=YAML
+*.md                     text eol=lf diff=markdown
 
 # Configuration / repo metadata
-.dockerignore            text eol=lf export-ignore linguist-detectable=false
 .editorconfig            text eol=lf export-ignore linguist-detectable=false
-.fallowrc.jsonc          text eol=lf export-ignore linguist-detectable=false
 .gitattributes           text eol=lf export-ignore linguist-detectable=false
 .gitignore               text eol=lf export-ignore linguist-detectable=false
-.gitlint                 text eol=lf export-ignore linguist-detectable=false
-.markdownlint-cli2.yaml  text eol=lf export-ignore linguist-detectable=false
-.node-version            text eol=lf export-ignore linguist-detectable=false
 .npmrc                   text eol=lf export-ignore linguist-detectable=false
 .nvmrc                   text eol=lf export-ignore linguist-detectable=false
-.pre-commit-config.yaml  text eol=lf export-ignore linguist-detectable=false
-.prettierignore          text eol=lf export-ignore linguist-detectable=false
-.python-version          text eol=lf export-ignore linguist-detectable=false
-.releaserc.json          text eol=lf export-ignore linguist-detectable=false
-.secrets.baseline        text eol=lf export-ignore linguist-detectable=false
-.sops.yaml               text eol=lf export-ignore linguist-detectable=false
 CODEOWNERS               text eol=lf export-ignore linguist-detectable=false
-Justfile                 text eol=lf
 
 # Documentation
+CHANGELOG.md             linguist-generated=true linguist-documentation=true
 CONTRIBUTING.md          text eol=lf linguist-documentation=true
 LICENSE                  text eol=lf linguist-documentation=true
-LICENSE.md               text eol=lf linguist-documentation=true
+NOTICE                   text eol=lf linguist-documentation=true
 README.md                text eol=lf linguist-documentation=true
 SECURITY.md              text eol=lf linguist-documentation=true
-
-# Vector graphics (text-based)
-*.svg                    text eol=lf
-
-# Graphics and assets (binary)
-# Archives
-*.gz                     binary -text -diff
-*.tar.gz                 binary -text -diff
-*.zip                    binary -text -diff
-
-# Databases & binary data
-*.bin                    binary
-*.db                     binary
-*.db-shm                 binary
-*.db-wal                 binary
-*.sqlite                 binary
-*.sqlite3                binary
-
-# Documents
-*.doc                    binary
-*.docx                   binary
-*.pdf                    binary
-*.xls                    binary
-*.xlsx                   binary
-
-# Images
-*.gif                    binary
-*.ico                    binary
-*.jpeg                   binary
-*.jpg                    binary
-*.png                    binary
-*.webp                   binary
-
-# Fonts
-*.eot                    binary
-*.otf                    binary
-*.ttf                    binary
-*.woff                   binary
-*.woff2                  binary
-
-# WebAssembly
-*.wasm                   binary
-
-# Machine learning / data science artifacts
-*.h5                     binary
-*.npy                    binary
-*.npz                    binary
-*.onnx                   binary
-*.parquet                binary
-*.pkl                    binary
-*.pt                     binary
-*.pth                    binary
-
-# Native binaries & libraries
-*.dll                    binary
-*.dylib                  binary
-*.exe                    binary
-*.node                   binary
-*.so                     binary
-
-# Documentation (excluded from language stats)
-CHANGELOG.md             linguist-generated=true linguist-documentation=true
 docs/*                   linguist-documentation=true
 
-# Generated files (excluded from language stats and git archives)
-*.snap                   linguist-generated=true
+# Generated / lock files (excluded from language stats and diffs)
 Cargo.lock               linguist-generated=true export-ignore -diff
 package-lock.json        linguist-generated=true export-ignore -diff
-pnpm-lock.yaml           linguist-generated=true export-ignore -diff
-uv.lock                  linguist-generated=true export-ignore -diff
 
-# Config & dotfiles (excluded from language stats and git archives)
-.code-workspace          export-ignore linguist-detectable=false
-.env                     export-ignore linguist-detectable=false
-.env.*                   export-ignore linguist-detectable=false
-.env.example             export-ignore linguist-detectable=false
-.eslintignore            export-ignore linguist-detectable=false
-.gitkeep                 export-ignore linguist-detectable=false
-.npmignore               export-ignore linguist-detectable=false
-.shellcheckrc            export-ignore linguist-detectable=false
-tsconfig.json            export-ignore linguist-detectable=false
-tsconfig.*.json          export-ignore linguist-detectable=false
+# Native build artifacts (not tracked, but produced by this repo's own build)
+*.node                   binary
+*.wasm                   binary
+*.so                     binary
+*.dylib                  binary
+*.dll                    binary
 
-# GitHub Actions workflows, reusable actions, and other YAML under .github/
+# GitHub Actions workflows
 .github/**/*.yml         linguist-detectable=true
-.github/**/*.yaml        linguist-detectable=true
