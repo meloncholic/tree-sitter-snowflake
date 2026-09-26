@@ -8,13 +8,10 @@ indent_style = space
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{py,pyi}]
+[*.{c,h,cc,rs}]
 indent_size = 4
 
-[*.{ps1,psm1}]
-indent_size = 4
-
-[*.{ts,tsx,js,jsx,css,scss,html,json,yml,yaml}]
+[*.{ts,js,mjs,json,toml,yml}]
 indent_size = 2
 
 [*.md]
